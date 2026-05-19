@@ -11,7 +11,6 @@ import 'passenger_saved_places.dart';
 
 class PassengerProfilePage extends StatefulWidget {
   const PassengerProfilePage({super.key});
-
   @override
   State<PassengerProfilePage> createState() => _PassengerProfilePageState();
 }
@@ -21,7 +20,6 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
   User? _currentUser;
   String? _profileImageUrl;
 
-  // Fallback data for Non-Blocking UI
   String _userName = "Flising Passenger";
   String _userStatus = "LOADING STATUS...";
   String _userEmail = "Loading...";
@@ -39,7 +37,6 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
 
   _loadUserProfileData() async {
     _currentUser = _auth.currentUser;
-
     if (_currentUser != null) {
       if (mounted) {
         setState(() {
@@ -51,24 +48,21 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
           }
         });
       }
-
       try {
         DatabaseReference userRef = FirebaseDatabase.instance.ref().child('users/passengers/${_currentUser!.uid}');
         DataSnapshot snapshot = await userRef.get();
-
         if (snapshot.exists) {
-        Map data = snapshot.value as Map;
+          Map data = snapshot.value as Map;
           _profileImageUrl = data['profileImageUrl'];
           bool isVerified = data['isVerified'] ?? false;
-
           if (mounted) {
             setState(() {
               _userStatus = isVerified ? "VERIFIED PASSENGER" : "PENDING VERIFICATION";
-              _statusColor = isVerified ? const Color(0xFF1976D2) : flisingOrange;
+              _statusColor = isVerified ? const Color(0xFF4CAF50) : flisingOrange;
             });
           }
         } else {
-           if (mounted) {
+          if (mounted) {
             setState(() {
               _userStatus = "PENDING VERIFICATION";
               _statusColor = flisingOrange;
@@ -100,7 +94,6 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    // INSTANT LOAD - No infinite spinners!
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -126,23 +119,27 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
               child: Row(
                 children: [
                   Container(
-                  width: 80, height: 80,
-                  decoration: BoxDecoration(
-                    color: flisingOrange.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: flisingOrange, width: 2),
-                    image: _profileImageUrl != null ? DecorationImage(
-                      image: NetworkImage(_profileImageUrl!),
-                      fit: BoxFit.cover,
-                    ) : null,
-                  ),
-                  child: _profileImageUrl == null ? Center(
-                    child: Text(
-                      _userName.isNotEmpty ? _userName.substring(0, 1).toUpperCase() : "P",
-                      style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFFE9692C)),
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: flisingOrange.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: flisingOrange, width: 2),
+                      image: _profileImageUrl != null
+                          ? DecorationImage(
+                              image: NetworkImage(_profileImageUrl!),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
                     ),
-                  ) : null,
-                ),
+                    child: _profileImageUrl == null
+                        ? Center(
+                            child: Text(
+                              _userName.isNotEmpty ? _userName.substring(0, 1).toUpperCase() : "P",
+                              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFFE9692C)),
+                            ),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 20),
                   Expanded(
@@ -216,8 +213,8 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const PassengerHistory()));
               },
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
               child: Divider(color: Colors.white12),
             ),
             _buildProfileTile(
