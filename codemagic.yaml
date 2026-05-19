@@ -2,13 +2,16 @@ workflows:
   android-workflow:
     name: Android Build
     environment:
-      flutter: 3.22.0
+      flutter: stable
       java: 17
     scripts:
+      - name: Set up local.properties
+        script: |
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
       - name: Build APK
         script: |
           flutter pub get
-          cd android
-          ./gradlew assembleRelease
+          flutter build apk --release --no-tree-shake-icons
     artifacts:
       - build/**/outputs/**/*.apk
+      - build/**/outputs/**/*.aab
