@@ -5,13 +5,9 @@ workflows:
       flutter: stable
       java: 17
     scripts:
-      - name: Set up local.properties
-        script: |
-          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
       - name: Build APK
         script: |
-          flutter pub get
-          flutter build apk --release --no-tree-shake-icons
+          flutter pub get --no-example
+          flutter build apk --debug
     artifacts:
       - build/**/outputs/**/*.apk
-      - build/**/outputs/**/*.aab
