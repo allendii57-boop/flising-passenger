@@ -16,6 +16,7 @@ android {
     }
 
     kotlinOptions {
+        languageVersion = "1.9"
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
