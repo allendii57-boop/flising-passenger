@@ -19,6 +19,7 @@ class PassengerProfilePage extends StatefulWidget {
 class _PassengerProfilePageState extends State<PassengerProfilePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   User? _currentUser;
+  String? _profileImageUrl;
 
   // Fallback data for Non-Blocking UI
   String _userName = "Flising Passenger";
@@ -56,7 +57,8 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
         DataSnapshot snapshot = await userRef.get();
 
         if (snapshot.exists) {
-          Map data = snapshot.value as Map;
+        Map data = snapshot.value as Map;
+          _profileImageUrl = data['profileImageUrl'];
           bool isVerified = data['isVerified'] ?? false;
 
           if (mounted) {
@@ -124,18 +126,23 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
               child: Row(
                 children: [
                   Container(
-                    width: 80, height: 80,
-                    decoration: BoxDecoration(
-                      color: flisingOrange.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: flisingOrange, width: 2),
-                    ),
-                    child: Center(
-                      child: Text(
-                        _userName.isNotEmpty ? _userName.substring(0, 1).toUpperCase() : "P",
-                        style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: flisingOrange),
-                      ),
-                    ),
+  width: 80, height: 80,
+  decoration: BoxDecoration(
+    color: flisingOrange.withOpacity(0.1),
+    shape: BoxShape.circle,
+    border: Border.all(color: flisingOrange, width: 2),
+    image: _profileImageUrl != null ? DecorationImage(
+      image: NetworkImage(_profileImageUrl!),
+      fit: BoxFit.cover,
+    ) : null,
+  ),
+  child: _profileImageUrl == null ? Center(
+    child: Text(
+      _userName.isNotEmpty ? _userName.substring(0, 1).toUpperCase() : "P",
+      style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFFE9692C)),
+    ),
+  ) : null,
+),
                   ),
                   const SizedBox(width: 20),
                   Expanded(
