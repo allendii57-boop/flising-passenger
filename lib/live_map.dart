@@ -62,7 +62,7 @@ class LiveMap extends StatelessWidget {
         zoom: 14.0,
       ),
       myLocationEnabled: true,
-      myLocationButtonEnabled: false,
+      myLocationButtonEnabled: true,
       zoomControlsEnabled: false,
       onTap: onTap,
       markers: markers,
