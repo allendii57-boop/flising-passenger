@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -75,7 +76,10 @@ String? _driverPhoto;
   void _checkVerificationStatus() {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      DatabaseReference userRef = FirebaseDatabase.instance.ref('users/passengers/${user.uid}/isVerified');
+    DatabaseReference userRef = FirebaseDatabase.instanceFor(
+  app: Firebase.app(),
+  databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+).ref('users/passengers/${user.uid}/isVerified');
       userRef.onValue.listen((event) {
         if (event.snapshot.exists && mounted) {
           setState(() {
