@@ -425,7 +425,16 @@ String? _driverPhoto;
                         if (_rideStatus == 'IDLE') ...[
                           Row(
                             children: [
-                              Icon(Icons.my_location, color: _isSettingPickup ? flisingOrange : Colors.white54, size: 20),
+                              GestureDetector(
+  onTap: () {
+    setState(() {
+      _customPickupLocation = null;
+      _pickupText = "My Current Location";
+    });
+    mapController.animateCamera(CameraUpdate.newLatLngZoom(_myLocation, 16.0));
+  },
+  child: Icon(Icons.my_location, color: flisingOrange, size: 20),
+),
                               const SizedBox(width: 12),
                               Expanded(child: Text(_pickupText, style: const TextStyle(color: Colors.white, fontSize: 16))),
                               IconButton(icon: const Icon(Icons.search, color: Colors.white54), onPressed: () => _showLocationSearchSheet(true)),
