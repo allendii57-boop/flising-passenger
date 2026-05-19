@@ -126,23 +126,23 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
               child: Row(
                 children: [
                   Container(
-  width: 80, height: 80,
-  decoration: BoxDecoration(
-    color: flisingOrange.withOpacity(0.1),
-    shape: BoxShape.circle,
-    border: Border.all(color: flisingOrange, width: 2),
-    image: _profileImageUrl != null ? DecorationImage(
-      image: NetworkImage(_profileImageUrl!),
-      fit: BoxFit.cover,
-    ) : null,
-  ),
-  child: _profileImageUrl == null ? Center(
-    child: Text(
-      _userName.isNotEmpty ? _userName.substring(0, 1).toUpperCase() : "P",
-      style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFFE9692C)),
-    ),
-  ) : null,
-),
+                  width: 80, height: 80,
+                  decoration: BoxDecoration(
+                    color: flisingOrange.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: flisingOrange, width: 2),
+                    image: _profileImageUrl != null ? DecorationImage(
+                      image: NetworkImage(_profileImageUrl!),
+                      fit: BoxFit.cover,
+                    ) : null,
+                  ),
+                  child: _profileImageUrl == null ? Center(
+                    child: Text(
+                      _userName.isNotEmpty ? _userName.substring(0, 1).toUpperCase() : "P",
+                      style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color(0xFFE9692C)),
+                    ),
+                  ) : null,
+                ),
                   ),
                   const SizedBox(width: 20),
                   Expanded(
