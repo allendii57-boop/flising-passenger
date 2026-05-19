@@ -43,7 +43,7 @@ class _PassengerVerificationPageState extends State<PassengerVerificationPage> {
       await user.reload();
       final ref = FirebaseDatabase.instanceFor(
         app: Firebase.app(),
-        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebaseapp.com',
+        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
       ).ref('users/passengers/${user.uid}');
       final snap = await ref.get();
       if (snap.exists && mounted) {
@@ -90,7 +90,7 @@ class _PassengerVerificationPageState extends State<PassengerVerificationPage> {
     try {
       final dbRef = FirebaseDatabase.instanceFor(
         app: Firebase.app(),
-        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebaseapp.com',
+        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
       ).ref('users/passengers/${user.uid}');
 
       if (_profileImageFile != null) {
