@@ -106,7 +106,7 @@ String? _driverPhoto;
     try {
       Position position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
-          timeLimit: const Duration(seconds: 8));
+          timeLimit: const Duration(seconds: 30));
 
       if (!mounted) return;
 
