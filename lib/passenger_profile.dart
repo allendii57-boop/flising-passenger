@@ -77,7 +77,21 @@ _loadUserProfileData() async {
   }
 }
 
-
+Future<void> _launchWhatsApp() async {
+  const message = "Hi Flising Support, I need help with my Passenger app.";
+  final Uri whatsappUrl = Uri.parse("https://wa.me/$supportWhatsAppNumber?text=${Uri.encodeComponent(message)}");
+  try {
+    await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Could not open WhatsApp. Please ensure it is installed.'),
+        backgroundColor: flisingOrange,
+      ));
+    }
+  }
+}
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
