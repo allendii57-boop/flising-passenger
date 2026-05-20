@@ -38,47 +38,43 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
     _loadUserProfileData();
   }
 
-  _loadUserProfileData() async {
-    _currentUser = _auth.currentUser;
-    if (_currentUser != null) {
-      if (mounted) {
-        setState(() {
-          _userEmail = _currentUser!.email ?? "No Email Provided";
-          if (_currentUser!.displayName != null && _currentUser!.displayName!.isNotEmpty) {
-            _userName = _currentUser!.displayName!;
-          } else {
-            _userName = _userEmail.split('@')[0].toUpperCase();
-          }
-        });
-      }
-      try {
-        DatabaseReference userRef = FirebaseDatabase.instance.ref().child('users/passengers/${_currentUser!.uid}');
-        DataSnapshot snapshot = await userRef.get();
-        if (snapshot.exists) {
-          Map data = snapshot.value as Map;
-          _profileImageUrl = data['profileImageUrl'];
-          bool isVerified = data['isVerified'] ?? false;
-          if (mounted) {
-            setState(() {
-              _userStatus = isVerified ? "VERIFIED PASSENGER" : "PENDING VERIFICATION";
-              _statusColor = isVerified ? const Color(0xFF4CAF50) : flisingOrange;
-            });
-          }
+_loadUserProfileData() async {
+  _currentUser = _auth.currentUser;
+  if (_currentUser != null) {
+    if (mounted) {
+      setState(() {
+        _userEmail = _currentUser!.email ?? "No Email Provided";
+        if (_currentUser!.displayName != null && _currentUser!.displayName!.isNotEmpty) {
+          _userName = _currentUser!.displayName!;
         } else {
-          if (mounted) {
-            setState(() {
-              _userStatus = "PENDING VERIFICATION";
-              _statusColor = flisingOrange;
-            });
-          }
+          _userName = _userEmail.split('@')[0].toUpperCase();
         }
-      } catch (e) {
-        print("Error fetching admin status: $e");
-      }
-    } else {
-      Navigator.pushReplacementNamed(context, '/login');
+      });
     }
+    try {
+      DatabaseReference userRef = FirebaseDatabase.instance.ref()
+          .child('users/passengers/${_currentUser!.uid}');
+      userRef.onValue.listen((event) {
+        if (event.snapshot.exists && mounted) {
+          Map data = event.snapshot.value as Map;
+          setState(() {
+            _profileImageUrl = data['profileImageUrl'];
+            bool isVerified = data['isVerified'] ?? false;
+            _userStatus = isVerified ? "VERIFIED PASSENGER" : "PENDING VERIFICATION";
+            _statusColor = isVerified ? const Color(0xFF4CAF50) : flisingOrange;
+            if (data['name'] != null && data['name'].toString().isNotEmpty) {
+              _userName = data['name'];
+            }
+          });
+        }
+      });
+    } catch (e) {
+      print("Error fetching profile data: $e");
+    }
+  } else {
+    Navigator.pushReplacementNamed(context, '/login');
   }
+}
 
   Future<void> _launchWhatsApp() async {
     const message = "Hi Flising Support, I need help with my Passenger app.";
