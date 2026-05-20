@@ -559,7 +559,8 @@ if (_dropoffLocation != null)
                         if (_rideStatus == 'SEARCHING') ...[
                           const CircularProgressIndicator(color: Color(0xFFE9692C)),
                           const SizedBox(height: 20),
-                          const Text("Finding your premium ride...", style: TextStyle(color: Colors.white)),
+                          const Text("Connecting you to the nearest available driver...", 
+  style: TextStyle(color: Colors.white), textAlign: TextAlign.center),
                           const SizedBox(height: 24),
                           ElevatedButton(onPressed: _cancelRide, child: const Text("CANCEL")),
                         ],
