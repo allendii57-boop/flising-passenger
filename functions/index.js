@@ -1,14 +1,19 @@
 const { onValueUpdated } = require("firebase-functions/v2/database");
+const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
 
 admin.initializeApp();
+
+const emailUser = defineSecret("EMAIL_USER");
+const emailPass = defineSecret("EMAIL_PASS");
 
 exports.onVerificationStatusChange = onValueUpdated(
   {
     ref: "/users/passengers/{uid}",
     instance: "flising-default-rtdb",
     region: "asia-southeast1",
+    secrets: [emailUser, emailPass],
   },
   async (event) => {
     const before = event.data.before.val();
@@ -23,16 +28,24 @@ exports.onVerificationStatusChange = onValueUpdated(
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: emailUser.value(),
+        pass: emailPass.value(),
       },
     });
 
     await transporter.sendMail({
-      from: `"Flising" <${process.env.EMAIL_USER}>`,
+      from: `"Flising" <${emailUser.value()}>`,
       to: userEmail,
       subject: "Welcome to Flising! You're verified ✅",
-      html: `<h2>Welcome ${userName}!</h2><p>You are now verified. Open the app and request your first ride!</p>`,
+      html: `
+        <div style="font-family:sans-serif;max-width:500px;margin:auto">
+          <h2 style="color:#E9692C">Welcome to Flising, ${userName}! 🎉</h2>
+          <p>Your documents have been verified. You can now request rides!</p>
+          <p>Open the Flising app and book your first ride.</p>
+          <br/>
+          <p style="color:#888;font-size:12px">The Flising Team</p>
+        </div>
+      `,
     });
     return null;
   }
