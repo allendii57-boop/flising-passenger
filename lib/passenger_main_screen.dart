@@ -165,7 +165,7 @@ _locationStream = Geolocator.getPositionStream(
     if (data['status'] == 'OK') {
       final meters = data['routes'][0]['legs'][0]['distance']['value'];
       final distanceInKm = meters / 1000.0;
-      final rawFare = 10.00 + (distanceInKm * 5.00);
+      final rawFare = 10.00 + (distanceInKm * 3.00);
       final finalFare = rawFare.ceilToDouble();
       if (mounted) setState(() {
         _calculatedFareAmount = finalFare;
@@ -186,7 +186,7 @@ void _calculateFareStraightLine() {
     activePickup.latitude, activePickup.longitude,
     _dropoffLocation!.latitude, _dropoffLocation!.longitude);
   final distanceInKm = distanceInMeters / 1000;
-  final rawFare = 10.00 + (distanceInKm * 5.00);
+  final rawFare = 10.00 + (distanceInKm * 3.00);
   final finalFare = rawFare.ceilToDouble();
   if (mounted) setState(() {
     _calculatedFareAmount = finalFare;
