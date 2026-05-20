@@ -41,7 +41,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       // 1. Update the display name in Auth
-      await userCredential.user?.updateDisplayName(_nameController.text.trim());
+await userCredential.user?.updateDisplayName(_nameController.text.trim());
+
+// 2. Save name to Realtime Database so Firebase Console shows it
+await FirebaseDatabase.instance
+    .ref('users/passengers/${userCredential.user!.uid}')
+    .set({
+      'name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'uid': userCredential.user!.uid,
+      'isVerified': false,
+      'pendingApproval': false,
+    });
         
            // 3. SEND VERIFICATION & SIGN OUT IMMEDIATELY
       // Do this before checking if mounted so auto-routers don't hijack the user
