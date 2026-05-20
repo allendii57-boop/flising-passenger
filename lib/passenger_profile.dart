@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -49,8 +50,11 @@ _loadUserProfileData() async {
       });
     }
     try {
-      DatabaseReference userRef = FirebaseDatabase.instance.ref()
-          .child('users/passengers/${_currentUser!.uid}');
+      DatabaseReference userRef = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+      ).ref('users/passengers/${_currentUser!.uid}');
+
       userRef.onValue.listen((event) {
         if (event.snapshot.exists && mounted) {
           Map data = event.snapshot.value as Map;
@@ -73,20 +77,6 @@ _loadUserProfileData() async {
   }
 }
 
-  Future<void> _launchWhatsApp() async {
-    const message = "Hi Flising Support, I need help with my Passenger app.";
-    final Uri whatsappUrl = Uri.parse("https://wa.me/$supportWhatsAppNumber?text=${Uri.encodeComponent(message)}");
-    try {
-      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: const Text('Could not open WhatsApp. Please ensure it is installed.'),
-          backgroundColor: flisingOrange,
-        ));
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
