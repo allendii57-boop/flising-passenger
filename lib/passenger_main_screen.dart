@@ -38,6 +38,7 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   String? _currentRideId;
   StreamSubscription<DatabaseEvent>? _ticketListener;
   StreamSubscription<DatabaseEvent>? _driverLocationListener;
+  StreamSubscription<Position>? _locationStream;
   
   String? _assignedDriverId;
   LatLng? _driverLocation;
@@ -124,7 +125,22 @@ String? _driverPhoto;
       });
 
       mapController.animateCamera(CameraUpdate.newLatLngZoom(_myLocation, 16.5));
-      _hasInitialZoomed = true;
+      _hasInitialZoomed = true
+_locationStream = Geolocator.getPositionStream(
+  locationSettings: const LocationSettings(
+    accuracy: LocationAccuracy.high,
+    distanceFilter: 10,
+  ),
+).listen((Position position) {
+  if (mounted && _rideStatus == 'IDLE') {
+    setState(() {
+      _myLocation = LatLng(position.latitude, position.longitude);
+      if (_customPickupLocation == null) {
+        _pickupText = "My Current Location";
+      }
+    });
+  }
+});
 
     } catch (e) {
       if (mounted) {
@@ -280,6 +296,7 @@ void _calculateFareStraightLine() {
   // 4. THE HANDSHAKE ENGINE (FIREBASE)
   void _findClosestDriver() async {
     setState(() { _rideStatus = 'SEARCHING'; });
+    _locationStream?.cancel();
 
     DatabaseReference dbRef = FirebaseDatabase.instance.ref();
     User? currentUser = FirebaseAuth.instance.currentUser;
