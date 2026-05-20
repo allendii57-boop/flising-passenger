@@ -61,7 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final uid = userCredential.user!.uid;
     final ref = FirebaseDatabase.instanceFor(
       app: Firebase.app(),
-      databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebaseapp.com',
+      databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
     ).ref('users/passengers/$uid');
     final snapshot = await ref.get()
         .timeout(Duration(seconds: 5));
