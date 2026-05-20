@@ -265,6 +265,7 @@ class _LanguageSettingsPageState extends State<LanguageSettingsPage> {
     {'name': 'Swahili', 'native': 'Kiswahili', 'flag': '🇰🇪'},
     {'name': 'Chinese', 'native': '中文', 'flag': '🇨🇳'},
     {'name': 'Hindi', 'native': 'हिन्दी', 'flag': '🇮🇳'},
+    {'name': 'Indonesian', 'native': 'Bahasa Indonesia', 'flag': '🇮🇩'},
   ];
 
   @override
