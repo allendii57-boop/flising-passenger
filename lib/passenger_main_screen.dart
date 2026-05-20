@@ -241,14 +241,14 @@ void _calculateFareStraightLine() {
                         LatLng newPoint = LatLng(place['lat'] as double, place['lng'] as double);
                         if (isPickup) {
                           _customPickupLocation = newPoint;
-                          _pickupText = place['name'];
+                          _pickupText = place['name'] as String;
                         } else {
                           _dropoffLocation = newPoint;
-                          _dropoffText = place['name'];
+                          _dropoffText = place['name'] as String;
                         }
                       });
                       _calculateFare();
-                      mapController.animateCamera(CameraUpdate.newLatLngZoom(LatLng(place['lat'], place['lng']), 15.5));
+                      mapController.animateCamera(CameraUpdate.newLatLngZoom(LatLng(place['lat'] as double, place['lng'] as double), 15.5));
                     },
                   );
                 },
