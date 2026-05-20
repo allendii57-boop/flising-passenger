@@ -125,7 +125,7 @@ String? _driverPhoto;
       });
 
       mapController.animateCamera(CameraUpdate.newLatLngZoom(_myLocation, 16.5));
-      _hasInitialZoomed = true
+      _hasInitialZoomed = true;
 _locationStream = Geolocator.getPositionStream(
   locationSettings: const LocationSettings(
     accuracy: LocationAccuracy.high,
