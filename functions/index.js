@@ -1,17 +1,21 @@
-const functions = require("firebase-functions/v2");
+const { onValueUpdated } = require("firebase-functions/v2/database");
 const admin = require("firebase-admin");
 const nodemailer = require("nodemailer");
 
 admin.initializeApp();
 
-exports.onVerificationStatusChange = functions.firestore.onDocumentUpdated(
-  "users/{uid}",
+exports.onVerificationStatusChange = onValueUpdated(
+  {
+    ref: "/users/passengers/{uid}",
+    instance: "flising-default-rtdb",
+    region: "asia-southeast1",
+  },
   async (event) => {
-    const before = event.data.before.data();
-    const after = event.data.after.data();
-    if (before.verificationStatus === after.verificationStatus) return null;
-    const newStatus = after.verificationStatus;
-    if (newStatus !== "verified" && newStatus !== "rejected") return null;
+    const before = event.data.before.val();
+    const after = event.data.after.val();
+    if (before.isVerified === after.isVerified) return null;
+    if (!after.isVerified) return null;
+
     const userEmail = after.email;
     const userName = after.name || "there";
     if (!userEmail) return null;
@@ -24,16 +28,11 @@ exports.onVerificationStatusChange = functions.firestore.onDocumentUpdated(
       },
     });
 
-    const subject = newStatus === "verified"
-      ? "Welcome to Flising! You're verified ✅"
-      : "Flising — Action required on your documents";
-    const html = newStatus === "verified"
-      ? `<h2>Welcome ${userName}!</h2><p>You are now verified. Open the app and request your first ride!</p>`
-      : `<h2>Hi ${userName},</h2><p>Your documents could not be verified. Please resubmit in the app.</p>`;
-
     await transporter.sendMail({
       from: `"Flising" <${process.env.EMAIL_USER}>`,
-      to: userEmail, subject, html,
+      to: userEmail,
+      subject: "Welcome to Flising! You're verified ✅",
+      html: `<h2>Welcome ${userName}!</h2><p>You are now verified. Open the app and request your first ride!</p>`,
     });
     return null;
   }
