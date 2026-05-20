@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
@@ -18,89 +19,79 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true; // Controls password visibility
 
-  _register() async {
-    if (_nameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Please fill in all fields', style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFFE9692C),
-        behavior: SnackBarBehavior.floating,
-      ));
-      return;
-    }
+   _register() async {
+  if (_nameController.text.isEmpty ||
+      _emailController.text.isEmpty ||
+      _passwordController.text.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('Please fill in all fields', style: TextStyle(color: Colors.white)),
+      backgroundColor: Color(0xFFE9692C),
+      behavior: SnackBarBehavior.floating,
+    ));
+    return;
+  }
 
-    setState(() {
-      _isLoading = true;
-    });
+  setState(() => _isLoading = true);
 
-    try {
-      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+  try {
+    final UserCredential userCredential = await _auth
+        .createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
 
-      // 1. Update the display name in Auth
-await userCredential.user?.updateDisplayName(_nameController.text.trim());
+    // 1. Update display name in Auth
+    await userCredential.user?.updateDisplayName(_nameController.text.trim());
 
-// 2. Save name to Realtime Database so Firebase Console shows it
-await FirebaseDatabase.instance
-    .ref('users/passengers/${userCredential.user!.uid}')
-    .set({
+    // 2. Save to Realtime Database with correct URL
+    await FirebaseDatabase.instanceFor(
+      app: Firebase.app(),
+      databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+    ).ref('users/passengers/${userCredential.user!.uid}').set({
       'name': _nameController.text.trim(),
       'email': _emailController.text.trim(),
       'uid': userCredential.user!.uid,
       'isVerified': false,
       'pendingApproval': false,
     });
-        
-           // 3. SEND VERIFICATION & SIGN OUT IMMEDIATELY
-      // Do this before checking if mounted so auto-routers don't hijack the user
-      await userCredential.user?.sendEmailVerification();
-      await _auth.signOut(); 
 
-      if (mounted) {
-          
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-            'Account created! A verification link has been sent to your email. Please verify to login.',
-            style: TextStyle(color: Colors.white), // <-- Moved inside Text()
-          ),
-          backgroundColor: Color(0xFF4CAF50), 
-          duration: Duration(seconds: 5),
-        ));
- await Future.delayed(Duration(seconds: 3));
-          Navigator.pushReplacementNamed(context, '/login');
-      }
-        
-           } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            e.message ?? 'Registration failed.',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: const Color(0xFFE9692C),
-        ));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-            'Error: $e',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: const Color(0xFFE9692C),
-        ));
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+    // 3. Send verification email then sign out
+    await userCredential.user?.sendEmailVerification();
+    await _auth.signOut();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+          'Account created! Check your email for a verification link.',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Color(0xFF4CAF50),
+        duration: Duration(seconds: 4),
+      ));
+      await Future.delayed(const Duration(seconds: 4));
+      Navigator.pushReplacementNamed(context, '/login');
     }
+
+  } on FirebaseAuthException catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(e.message ?? 'Registration failed.',
+            style: const TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFFE9692C),
+      ));
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Error: $e',
+            style: const TextStyle(color: Colors.white)),
+        backgroundColor: const Color(0xFFE9692C),
+      ));
+    }
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
   }
+   }
     
         
 
