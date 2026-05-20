@@ -134,23 +134,49 @@ String? _driverPhoto;
     }
   }
 
-    void _calculateFare() {
-    if (_dropoffLocation == null) return;
-    LatLng activePickup = _customPickupLocation ?? _myLocation;
-    double distanceInMeters = Geolocator.distanceBetween(
-        activePickup.latitude,
-        activePickup.longitude,
-        _dropoffLocation!.latitude,
-        _dropoffLocation!.longitude);
-
-    double distanceInKm = distanceInMeters / 1000;
-    double rawFare = 5.00 + (distanceInKm * 10.00);
-    double finalFare = rawFare.ceilToDouble();
-    setState(() {
-      _calculatedFareAmount = finalFare;
-      _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
-    });
+    Future<void> _calculateFare() async {
+  if (_dropoffLocation == null) return;
+  final activePickup = _customPickupLocation ?? _myLocation;
+  try {
+    final url = Uri.parse(
+      'https://maps.googleapis.com/maps/api/directions/json'
+      '?origin=${activePickup.latitude},${activePickup.longitude}'
+      '&destination=${_dropoffLocation!.latitude},${_dropoffLocation!.longitude}'
+      '&key=AIzaSyB455Y5mJwyYGdmd0OLj8IHirxn4OqNo_A'
+    );
+    final response = await http.get(url);
+    final data = json.decode(response.body);
+    if (data['status'] == 'OK') {
+      final meters = data['routes'][0]['legs'][0]['distance']['value'];
+      final distanceInKm = meters / 1000.0;
+      final rawFare = 10.00 + (distanceInKm * 5.00);
+      final finalFare = rawFare.ceilToDouble();
+      if (mounted) setState(() {
+        _calculatedFareAmount = finalFare;
+        _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
+      });
+    } else {
+      _calculateFareStraightLine();
+    }
+  } catch (e) {
+    _calculateFareStraightLine();
   }
+}
+
+void _calculateFareStraightLine() {
+  if (_dropoffLocation == null) return;
+  final activePickup = _customPickupLocation ?? _myLocation;
+  final distanceInMeters = Geolocator.distanceBetween(
+    activePickup.latitude, activePickup.longitude,
+    _dropoffLocation!.latitude, _dropoffLocation!.longitude);
+  final distanceInKm = distanceInMeters / 1000;
+  final rawFare = 10.00 + (distanceInKm * 5.00);
+  final finalFare = rawFare.ceilToDouble();
+  if (mounted) setState(() {
+    _calculatedFareAmount = finalFare;
+    _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
+  });
+}
 
   void _handleMapTap(LatLng point) {
     if (_rideStatus != 'IDLE' || _showCompletionPopup) return;
@@ -305,7 +331,18 @@ String? _driverPhoto;
         }
       }
     });
+    Future.delayed(const Duration(seconds: 60), () {
+  if (mounted && _rideStatus == 'SEARCHING') {
+    _cancelRide();
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      content: Text('No drivers available right now. Please try again in a few minutes.'),
+      backgroundColor: Colors.red,
+      duration: Duration(seconds: 5),
+    ));
   }
+});
+  }
+  
 
   void _startTrackingDriver() {
     if (_assignedDriverId == null) return;
