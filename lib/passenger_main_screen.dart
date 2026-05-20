@@ -509,7 +509,28 @@ void _calculateFareStraightLine() {
                               IconButton(icon: const Icon(Icons.search, color: Colors.white54), onPressed: () => _showLocationSearchSheet(false)),
                             ],
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 12),
+if (_dropoffLocation != null)
+  Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: Colors.black,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: flisingOrange.withOpacity(0.4)),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(children: [
+          Icon(Icons.payments_outlined, color: flisingOrange, size: 18),
+          const SizedBox(width: 8),
+          const Text("Estimated Fare", style: TextStyle(color: Colors.white54, fontSize: 13)),
+        ]),
+        Text(_estimatedFare, style: TextStyle(color: flisingOrange, fontSize: 18, fontWeight: FontWeight.bold)),
+      ],
+    ),
+  ),
                           ElevatedButton(
                             onPressed: () {
                               if (!_isVerified) {
