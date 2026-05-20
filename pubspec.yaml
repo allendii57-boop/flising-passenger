@@ -8,15 +8,15 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-http: ^1.2.0
   flutter:
     sdk: flutter
-  
+  http: ^1.2.0
+
   # Premium Google Maps Engine & Translation
   google_maps_flutter: ^2.10.0
   geolocator: any
   geocoding: ^2.1.1
-  
+
   # Firebase Cloud Backend
   firebase_core: any
   firebase_auth: any
@@ -24,10 +24,10 @@ http: ^1.2.0
   firebase_storage: any
   firebase_messaging: ^16.2.0
   cloud_firestore: ^6.3.0
-  
+
   # Camera & Gallery Access
   image_picker: any
-  
+
   # External Links (WhatsApp)
   url_launcher: any
 
@@ -35,7 +35,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: any
-  
+
   # The App Icon Generator
   flutter_launcher_icons: ^0.13.1
 
@@ -47,7 +47,7 @@ flutter:
     - assets/images/flising_logo.png
     - assets/images/flising_apk_logo.png
 
-# The custom Flising Launcher Icon Configuration
+  # The custom Flising Launcher Icon Configuration
 flutter_launcher_icons:
   android: true
   ios: true
