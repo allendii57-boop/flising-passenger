@@ -271,7 +271,28 @@ void _calculateFareStraightLine() {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10))),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+if (_dropoffLocation != null)
+  Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: Colors.black,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: flisingOrange.withOpacity(0.4)),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(children: [
+          Icon(Icons.payments_outlined, color: flisingOrange, size: 18),
+          const SizedBox(width: 8),
+          const Text("Estimated Fare", style: TextStyle(color: Colors.white54, fontSize: 13)),
+        ]),
+        Text(_estimatedFare, style: TextStyle(color: flisingOrange, fontSize: 18, fontWeight: FontWeight.bold)),
+      ],
+    ),
+  ),
             const Text("Select Payment Method", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             Container(
