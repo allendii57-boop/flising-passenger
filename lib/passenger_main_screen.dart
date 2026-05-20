@@ -234,11 +234,11 @@ void _calculateFareStraightLine() {
                   final place = vanimoLocations[index];
                   return ListTile(
                     leading: Icon(Icons.location_on, color: flisingOrange),
-                    title: Text(place['name'], style: const TextStyle(color: Colors.white)),
+                    title: Text(place['name'] as String, style: const TextStyle(color: Colors.white)),
                     onTap: () {
                       Navigator.pop(context);
                       setState(() {
-                        LatLng newPoint = LatLng(place['lat'], place['lng']);
+                        LatLng newPoint = LatLng(place['lat'] as double, place['lng'] as double);
                         if (isPickup) {
                           _customPickupLocation = newPoint;
                           _pickupText = place['name'];
