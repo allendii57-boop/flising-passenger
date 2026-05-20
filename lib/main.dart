@@ -33,7 +33,17 @@ class FlisingPassengerApp extends StatelessWidget {
       ),
 
       // The app now boots DIRECTLY to the Splash Screen
-      home: const SplashScreen(),
+      home: StreamBuilder<User?>(
+  stream: FirebaseAuth.instance.authStateChanges(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Scaffold(backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator()));
+    }
+    if (snapshot.hasData) return const SplashScreen();
+    return const LoginScreen();
+  },
+),
 
       // Your app's map of routes
       routes: {
