@@ -12,7 +12,7 @@ import 'dart:async';
 import 'live_map.dart';
 import 'passenger_history.dart';
 import 'passenger_profile.dart';
-import 'quick_places_list.dart'; 
+import 'quick_places_list.dart';
 
 class PassengerMainScreen extends StatefulWidget {
   const PassengerMainScreen({super.key});
@@ -23,9 +23,8 @@ class PassengerMainScreen extends StatefulWidget {
 
 class _PassengerMainScreenState extends State<PassengerMainScreen> {
   late GoogleMapController mapController;
-  
-  // 1. STATE VARIABLES
-  LatLng _myLocation = const LatLng(-2.6741, 141.3028); // Vanimo Default
+
+  LatLng _myLocation = const LatLng(-2.6741, 141.3028);
   LatLng? _customPickupLocation;
   bool _isSettingPickup = false;
   LatLng? _dropoffLocation;
@@ -33,30 +32,28 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   String _dropoffText = "Tap map to set dropoff...";
   String _estimatedFare = "K 0.00";
   double _calculatedFareAmount = 0.0;
-  
+
   String _rideStatus = 'IDLE';
   String? _currentRideId;
   StreamSubscription<DatabaseEvent>? _ticketListener;
   StreamSubscription<DatabaseEvent>? _driverLocationListener;
   StreamSubscription<Position>? _locationStream;
-  
+
   String? _assignedDriverId;
   LatLng? _driverLocation;
   bool _showCancelButton = false;
   bool _showCompletionPopup = false;
   String? _lastCompletedRideId;
-    String? _driverName;
-String? _driverPhone;
-String? _driverPhoto;
+  String? _driverName;
+  String? _driverPhone;
+  String? _driverPhoto;
   int _givenRating = 0;
   int _selectedView = 0;
-  
-  bool _isVerified = false; 
-  bool _hasInitialZoomed = false; 
-  
-  // NEW: Track GPS state for the badge
-  bool _isAcquiringGps = false; 
-    bool _hasAcquiredLocation = false;
+
+  bool _isVerified = false;
+  bool _hasInitialZoomed = false;
+  bool _isAcquiringGps = false;
+  bool _hasAcquiredLocation = false;
 
   final Color flisingOrange = const Color(0xFFE9692C);
   final Color darkSurface = const Color(0xFF1C1C1E);
@@ -65,24 +62,24 @@ String? _driverPhoto;
   void initState() {
     super.initState();
     _goToMyLocation();
-    _checkVerificationStatus(); 
+    _checkVerificationStatus();
   }
 
   @override
   void dispose() {
     _ticketListener?.cancel();
     _driverLocationListener?.cancel();
+    _locationStream?.cancel();
     super.dispose();
   }
 
-  // 2. GATEKEEPER LOGIC
   void _checkVerificationStatus() {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-    DatabaseReference userRef = FirebaseDatabase.instanceFor(
-  app: Firebase.app(),
-  databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
-).ref('users/passengers/${user.uid}/isVerified');
+      DatabaseReference userRef = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+      ).ref('users/passengers/${user.uid}/isVerified');
       userRef.onValue.listen((event) {
         if (event.snapshot.exists && mounted) {
           setState(() {
@@ -93,22 +90,20 @@ String? _driverPhoto;
     }
   }
 
- // 3. MAP & GPS LOGIC (Updated for Premium "Zoom-In" feel)
   Future<void> _goToMyLocation() async {
     await Future.delayed(const Duration(milliseconds: 500));
     try {
       mapController.animateCamera(CameraUpdate.newLatLngZoom(
           const LatLng(-2.6741, 141.3028), 14.0));
-    } catch(e) {
-    }
+    } catch (e) {}
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) return;
     }
-      
-      setState(() => _isAcquiringGps = true);
+
+    setState(() => _isAcquiringGps = true);
 
     try {
       Position position = await Geolocator.getCurrentPosition(
@@ -121,78 +116,74 @@ String? _driverPhoto;
         _myLocation = LatLng(position.latitude, position.longitude);
         _pickupText = "My Current Location";
         _isAcquiringGps = false;
-        _hasAcquiredLocation = true; 
+        _hasAcquiredLocation = true;
       });
 
       mapController.animateCamera(CameraUpdate.newLatLngZoom(_myLocation, 16.5));
       _hasInitialZoomed = true;
-_locationStream = Geolocator.getPositionStream(
-  locationSettings: const LocationSettings(
-    accuracy: LocationAccuracy.high,
-    distanceFilter: 10,
-  ),
-).listen((Position position) {
-  if (mounted && _rideStatus == 'IDLE') {
-    setState(() {
-      _myLocation = LatLng(position.latitude, position.longitude);
-      if (_customPickupLocation == null) {
-        _pickupText = "My Current Location";
-      }
-    });
-  }
-});
 
+      _locationStream = Geolocator.getPositionStream(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10,
+        ),
+      ).listen((Position position) {
+        if (mounted && _rideStatus == 'IDLE') {
+          setState(() {
+            _myLocation = LatLng(position.latitude, position.longitude);
+            if (_customPickupLocation == null) {
+              _pickupText = "My Current Location";
+            }
+          });
+        }
+      });
     } catch (e) {
-      if (mounted) {
-        setState(() => _isAcquiringGps = false);
-      }
-      print("GPS Timeout: $e");
+      if (mounted) setState(() => _isAcquiringGps = false);
     }
   }
 
-    Future<void> _calculateFare() async {
-  if (_dropoffLocation == null) return;
-  final activePickup = _customPickupLocation ?? _myLocation;
-  try {
-    final url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/directions/json'
-      '?origin=${activePickup.latitude},${activePickup.longitude}'
-      '&destination=${_dropoffLocation!.latitude},${_dropoffLocation!.longitude}'
-      '&key=AIzaSyB455Y5mJwyYGdmd0OLj8IHirxn4OqNo_A'
-    );
-    final response = await http.get(url);
-    final data = json.decode(response.body);
-    if (data['status'] == 'OK') {
-      final meters = data['routes'][0]['legs'][0]['distance']['value'];
-      final distanceInKm = meters / 1000.0;
-      final rawFare = 10.00 + (distanceInKm * 3.00);
-      final finalFare = rawFare.ceilToDouble();
-      if (mounted) setState(() {
-        _calculatedFareAmount = finalFare;
-        _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
-      });
-    } else {
+  Future<void> _calculateFare() async {
+    if (_dropoffLocation == null) return;
+    final activePickup = _customPickupLocation ?? _myLocation;
+    try {
+      final url = Uri.parse(
+          'https://maps.googleapis.com/maps/api/directions/json'
+          '?origin=${activePickup.latitude},${activePickup.longitude}'
+          '&destination=${_dropoffLocation!.latitude},${_dropoffLocation!.longitude}'
+          '&key=AIzaSyB455Y5mJwyYGdmd0OLj8IHirxn4OqNo_A');
+      final response = await http.get(url);
+      final data = json.decode(response.body);
+      if (data['status'] == 'OK') {
+        final meters = data['routes'][0]['legs'][0]['distance']['value'];
+        final distanceInKm = meters / 1000.0;
+        final rawFare = 10.00 + (distanceInKm * 3.00);
+        final finalFare = rawFare.ceilToDouble();
+        if (mounted) setState(() {
+          _calculatedFareAmount = finalFare;
+          _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
+        });
+      } else {
+        _calculateFareStraightLine();
+      }
+    } catch (e) {
       _calculateFareStraightLine();
     }
-  } catch (e) {
-    _calculateFareStraightLine();
   }
-}
 
-void _calculateFareStraightLine() {
-  if (_dropoffLocation == null) return;
-  final activePickup = _customPickupLocation ?? _myLocation;
-  final distanceInMeters = Geolocator.distanceBetween(
-    activePickup.latitude, activePickup.longitude,
-    _dropoffLocation!.latitude, _dropoffLocation!.longitude);
-  final distanceInKm = distanceInMeters / 1000;
-  final rawFare = 10.00 + (distanceInKm * 3.00);
-  final finalFare = rawFare.ceilToDouble();
-  if (mounted) setState(() {
-    _calculatedFareAmount = finalFare;
-    _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
-  });
-}
+  void _calculateFareStraightLine() {
+    if (_dropoffLocation == null) return;
+    final activePickup = _customPickupLocation ?? _myLocation;
+    final distanceInMeters = Geolocator.distanceBetween(
+        activePickup.latitude, activePickup.longitude,
+        _dropoffLocation!.latitude, _dropoffLocation!.longitude);
+    final distanceInKm = distanceInMeters / 1000;
+    final rawFare = 10.00 + (distanceInKm * 3.00);
+    final finalFare = rawFare.ceilToDouble();
+    if (mounted) setState(() {
+      _calculatedFareAmount = finalFare;
+      _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
+    });
+  }
 
   void _handleMapTap(LatLng point) {
     if (_rideStatus != 'IDLE' || _showCompletionPopup) return;
@@ -208,13 +199,14 @@ void _calculateFareStraightLine() {
     });
     _calculateFare();
   }
-    
+
   void _showLocationSearchSheet(bool isPickup) {
     showModalBottomSheet(
       context: context,
       backgroundColor: darkSurface,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.6,
         maxChildSize: 0.9,
@@ -223,8 +215,12 @@ void _calculateFareStraightLine() {
           children: [
             Padding(
               padding: const EdgeInsets.all(20.0),
-              child: Text(isPickup ? "Where are we picking you up?" : "Where to?", 
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text(
+                  isPickup ? "Where are we picking you up?" : "Where to?",
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
             ),
             Expanded(
               child: ListView.builder(
@@ -234,11 +230,13 @@ void _calculateFareStraightLine() {
                   final place = vanimoLocations[index];
                   return ListTile(
                     leading: Icon(Icons.location_on, color: flisingOrange),
-                    title: Text(place['name'] as String, style: const TextStyle(color: Colors.white)),
+                    title: Text(place['name'] as String,
+                        style: const TextStyle(color: Colors.white)),
                     onTap: () {
                       Navigator.pop(context);
                       setState(() {
-                        LatLng newPoint = LatLng(place['lat'] as double, place['lng'] as double);
+                        LatLng newPoint = LatLng(
+                            place['lat'] as double, place['lng'] as double);
                         if (isPickup) {
                           _customPickupLocation = newPoint;
                           _pickupText = place['name'] as String;
@@ -248,7 +246,10 @@ void _calculateFareStraightLine() {
                         }
                       });
                       _calculateFare();
-                      mapController.animateCamera(CameraUpdate.newLatLngZoom(LatLng(place['lat'] as double, place['lng'] as double), 15.5));
+                      mapController.animateCamera(CameraUpdate.newLatLngZoom(
+                          LatLng(place['lat'] as double,
+                              place['lng'] as double),
+                          15.5));
                     },
                   );
                 },
@@ -264,26 +265,45 @@ void _calculateFareStraightLine() {
     showModalBottomSheet(
       context: context,
       backgroundColor: darkSurface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (bc) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 20.0),
+        padding:
+            const EdgeInsets.symmetric(vertical: 24.0, horizontal: 20.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(10))),
+            Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(10))),
             const SizedBox(height: 20),
-            const Text("Select Payment Method", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text("Select Payment Method",
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             Container(
-              decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(16), border: Border.all(color: flisingOrange.withOpacity(0.5))),
+              decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: flisingOrange.withOpacity(0.5))),
               child: ListTile(
                 leading: Icon(Icons.payments, color: flisingOrange, size: 30),
-                title: const Text("Cash", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                subtitle: const Text("Pay driver directly", style: TextStyle(color: Colors.white54, fontSize: 12)),
-                trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white30, size: 16),
+                title: const Text("Cash",
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: const Text("Pay driver directly",
+                    style:
+                        TextStyle(color: Colors.white54, fontSize: 12)),
+                trailing: const Icon(Icons.arrow_forward_ios,
+                    color: Colors.white30, size: 16),
                 onTap: () {
                   Navigator.pop(context);
-                  _findClosestDriver();
+                  _findAvailableDriver();
                 },
               ),
             ),
@@ -293,96 +313,235 @@ void _calculateFareStraightLine() {
     );
   }
 
-  // 4. THE HANDSHAKE ENGINE (FIREBASE)
-  void _findClosestDriver() async {
+  // ─────────────────────────────────────────────
+  // NEW SMART DRIVER FINDER
+  // ─────────────────────────────────────────────
+  void _findAvailableDriver() async {
     setState(() { _rideStatus = 'SEARCHING'; });
     _locationStream?.cancel();
 
-    DatabaseReference dbRef = FirebaseDatabase.instance.ref();
+    // 1. Check for available drivers first
+    final dbRef = FirebaseDatabase.instanceFor(
+      app: Firebase.app(),
+      databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+    ).ref();
+
+    final driversSnap = await dbRef.child('drivers').get();
+
+    if (!mounted) return;
+
+    // 2. Filter: online + not in a ride
+    List<Map<String, dynamic>> availableDrivers = [];
+
+    if (driversSnap.exists) {
+      final allDrivers = driversSnap.value as Map<dynamic, dynamic>;
+      allDrivers.forEach((driverId, driverData) {
+        if (driverData is Map) {
+          bool isOnline = driverData['isOnline'] == true;
+          double? lat = (driverData['latitude'] as num?)?.toDouble();
+          double? lng = (driverData['longitude'] as num?)?.toDouble();
+          bool hasLocation = lat != null && lng != null;
+
+          // Check driver is not already in a ride
+          bool isBusy = driverData['currentRideId'] != null;
+
+          if (isOnline && hasLocation && !isBusy) {
+            availableDrivers.add({
+              'id': driverId,
+              'lat': lat,
+              'lng': lng,
+            });
+          }
+        }
+      });
+    }
+
+    // 3. No drivers at all — fail fast in 5 seconds
+    if (availableDrivers.isEmpty) {
+      Future.delayed(const Duration(seconds: 5), () {
+        if (mounted && _rideStatus == 'SEARCHING') {
+          setState(() { _rideStatus = 'IDLE'; });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No drivers available right now. Please try again in a few minutes.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+      });
+      return;
+    }
+
+    // 4. Sort by distance to pickup
+    final activePickup = _customPickupLocation ?? _myLocation;
+    availableDrivers.sort((a, b) {
+      double distA = Geolocator.distanceBetween(
+          activePickup.latitude, activePickup.longitude, a['lat'], a['lng']);
+      double distB = Geolocator.distanceBetween(
+          activePickup.latitude, activePickup.longitude, b['lat'], b['lng']);
+      return distA.compareTo(distB);
+    });
+
+    // 5. Create the ride ticket
     User? currentUser = FirebaseAuth.instance.currentUser;
     String newRideId = dbRef.child('rides').push().key!;
     _currentRideId = newRideId;
 
+    final closestDriver = availableDrivers.first;
+
     await dbRef.child('rides/$newRideId').set({
-      'passengerId': currentUser?.uid ?? 'unknown_passenger',
-      'assignedDriverId': 'pending_driver_search',
+      'passengerId': currentUser?.uid ?? 'unknown',
+      'assignedDriverId': closestDriver['id'],
       'pickupText': _pickupText,
       'dropoffText': _dropoffText,
       'fare': _estimatedFare,
       'paymentMethod': 'CASH',
-      'pickupLat': (_customPickupLocation ?? _myLocation).latitude,
-      'pickupLng': (_customPickupLocation ?? _myLocation).longitude,
+      'pickupLat': activePickup.latitude,
+      'pickupLng': activePickup.longitude,
       'dropoffLat': _dropoffLocation!.latitude,
       'dropoffLng': _dropoffLocation!.longitude,
       'status': 'PENDING',
       'timestamp': ServerValue.timestamp,
     });
 
-    _ticketListener = dbRef.child('rides/$newRideId').onValue.listen((event) {
-      if (event.snapshot.exists) {
-        final rideData = event.snapshot.value as Map<dynamic, dynamic>;
-        String currentStatus = rideData['status'];
-        if (!mounted) return;
+    // 6. Mark driver as busy
+    await dbRef.child('drivers/${closestDriver['id']}/currentRideId').set(newRideId);
 
-        if (currentStatus == 'ACCEPTED' && _rideStatus != 'ACCEPTED') {
-          setState(() { 
-            _rideStatus = 'ACCEPTED'; 
-            _assignedDriverId = rideData['assignedDriverId'];
-            _showCancelButton = false; 
-          });
-          _startTrackingDriver();
-          Timer(const Duration(seconds: 5), () {
-            if (mounted && _rideStatus == 'ACCEPTED') setState(() { _showCancelButton = true; });
-          });
-        } else if (currentStatus == 'IN_PROGRESS' && _rideStatus != 'IN_PROGRESS') {
-          setState(() { _rideStatus = 'IN_PROGRESS'; _showCancelButton = false; });
-        } else if (currentStatus == 'COMPLETED') {
-          setState(() {
-            _lastCompletedRideId = _currentRideId;
-            _rideStatus = 'IDLE';
-            _currentRideId = null;
-            _showCompletionPopup = true;
-          });
-          _ticketListener?.cancel();
-          _stopTrackingDriver();
-        }
+    // 7. Listen for response
+    _listenToRide(newRideId, availableDrivers, 1);
+
+    // 8. Timeout for this driver after 35 seconds
+    _scheduleDriverTimeout(newRideId, availableDrivers, 1);
+  }
+
+  void _listenToRide(String rideId, List<Map<String, dynamic>> drivers, int nextIndex) {
+    _ticketListener?.cancel();
+    _ticketListener = FirebaseDatabase.instanceFor(
+      app: Firebase.app(),
+      databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+    ).ref().child('rides/$rideId').onValue.listen((event) {
+      if (!event.snapshot.exists || !mounted) return;
+
+      final rideData = event.snapshot.value as Map<dynamic, dynamic>;
+      final status = rideData['status'];
+
+      if (status == 'ACCEPTED' && _rideStatus != 'ACCEPTED') {
+        setState(() {
+          _rideStatus = 'ACCEPTED';
+          _assignedDriverId = rideData['assignedDriverId'];
+          _showCancelButton = false;
+        });
+        _startTrackingDriver();
+        Timer(const Duration(seconds: 5), () {
+          if (mounted && _rideStatus == 'ACCEPTED') {
+            setState(() { _showCancelButton = true; });
+          }
+        });
+      } else if (status == 'IN_PROGRESS' && _rideStatus != 'IN_PROGRESS') {
+        setState(() { _rideStatus = 'IN_PROGRESS'; _showCancelButton = false; });
+      } else if (status == 'COMPLETED') {
+        setState(() {
+          _lastCompletedRideId = _currentRideId;
+          _rideStatus = 'IDLE';
+          _currentRideId = null;
+          _showCompletionPopup = true;
+        });
+        _ticketListener?.cancel();
+        _stopTrackingDriver();
+      } else if (status == 'IGNORED') {
+        // Driver ignored — try next
+        _ticketListener?.cancel();
+        _tryNextDriver(rideId, drivers, nextIndex);
       }
     });
-    Future.delayed(const Duration(seconds: 60), () {
-  if (mounted && _rideStatus == 'SEARCHING') {
-    _cancelRide();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('No drivers available right now. Please try again in a few minutes.'),
-      backgroundColor: Colors.red,
-      duration: Duration(seconds: 5),
-    ));
   }
-});
+
+  void _scheduleDriverTimeout(String rideId, List<Map<String, dynamic>> drivers, int nextIndex) {
+    Future.delayed(const Duration(seconds: 35), () {
+      if (mounted && _rideStatus == 'SEARCHING') {
+        _tryNextDriver(rideId, drivers, nextIndex);
+      }
+    });
   }
-  
+
+  void _tryNextDriver(String rideId, List<Map<String, dynamic>> drivers, int nextIndex) async {
+    if (!mounted || _rideStatus != 'SEARCHING') return;
+
+    // Free up previous driver
+    if (nextIndex > 0 && nextIndex - 1 < drivers.length) {
+      final prevDriver = drivers[nextIndex - 1];
+      await FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+      ).ref().child('drivers/${prevDriver['id']}/currentRideId').remove();
+    }
+
+    if (nextIndex >= drivers.length) {
+      // All drivers exhausted
+      await FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+      ).ref().child('rides/$rideId').update({'status': 'NO_DRIVERS'});
+
+      if (mounted) {
+        setState(() { _rideStatus = 'IDLE'; _currentRideId = null; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No drivers available right now. Please try again in a few minutes.'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Assign next driver
+    final nextDriver = drivers[nextIndex];
+    await FirebaseDatabase.instanceFor(
+      app: Firebase.app(),
+      databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+    ).ref().child('rides/$rideId').update({
+      'assignedDriverId': nextDriver['id'],
+      'status': 'PENDING',
+    });
+
+    await FirebaseDatabase.instanceFor(
+      app: Firebase.app(),
+      databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+    ).ref().child('drivers/${nextDriver['id']}/currentRideId').set(rideId);
+
+    _listenToRide(rideId, drivers, nextIndex + 1);
+    _scheduleDriverTimeout(rideId, drivers, nextIndex + 1);
+  }
 
   void _startTrackingDriver() {
     if (_assignedDriverId == null) return;
-    DatabaseReference driverRef = FirebaseDatabase.instance.ref('drivers/$_assignedDriverId');
-      FirebaseDatabase.instance
-    .ref('drivers/$_assignedDriverId/profile')
-    .once()
-    .then((snap) {
-  final d = snap.snapshot.value as Map<dynamic, dynamic>?;
-  if (d != null && mounted) {
-    setState(() {
-      _driverName = d['fullName'] ?? 'Driver';
-      _driverPhone = d['phoneNumber'] ?? '';
-      _driverPhoto = d['photoUrl'];
+    FirebaseDatabase.instance
+        .ref('drivers/$_assignedDriverId/profile')
+        .once()
+        .then((snap) {
+      final d = snap.snapshot.value as Map<dynamic, dynamic>?;
+      if (d != null && mounted) {
+        setState(() {
+          _driverName = d['fullName'] ?? 'Driver';
+          _driverPhone = d['phoneNumber'] ?? '';
+          _driverPhoto = d['photoUrl'];
+        });
+      }
     });
-  }
-});
-    _driverLocationListener = driverRef.onValue.listen((event) {
+
+    _driverLocationListener = FirebaseDatabase.instance
+        .ref('drivers/$_assignedDriverId')
+        .onValue
+        .listen((event) {
       if (mounted && event.snapshot.exists) {
         final data = event.snapshot.value as Map<dynamic, dynamic>;
         if (data['latitude'] != null && data['longitude'] != null) {
           setState(() {
-            _driverLocation = LatLng(data['latitude'], data['longitude']);
+            _driverLocation =
+                LatLng(data['latitude'], data['longitude']);
           });
         }
       }
@@ -394,10 +553,20 @@ void _calculateFareStraightLine() {
     _driverLocation = null;
   }
 
-  void _cancelRide() {
+  void _cancelRide() async {
     setState(() { _rideStatus = 'IDLE'; _showCancelButton = false; });
     if (_currentRideId != null) {
-      FirebaseDatabase.instance.ref('rides/$_currentRideId').update({'status': 'CANCELLED_BY_PASSENGER'});
+      final dbRef = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+      ).ref();
+
+      // Free up the driver
+      if (_assignedDriverId != null) {
+        await dbRef.child('drivers/$_assignedDriverId/currentRideId').remove();
+      }
+
+      await dbRef.child('rides/$_currentRideId').update({'status': 'CANCELLED_BY_PASSENGER'});
       _currentRideId = null;
     }
     _stopTrackingDriver();
@@ -406,18 +575,19 @@ void _calculateFareStraightLine() {
 
   void _submitRating() async {
     if (_lastCompletedRideId != null && _givenRating > 0) {
-      DatabaseReference rideRef = FirebaseDatabase.instance.ref('rides/$_lastCompletedRideId');
-      await rideRef.update({'rating': _givenRating});
+      await FirebaseDatabase.instance
+          .ref('rides/$_lastCompletedRideId')
+          .update({'rating': _givenRating});
     }
     setState(() {
       _showCompletionPopup = false;
       _dropoffLocation = null;
       _estimatedFare = "K 0.00";
       _dropoffText = "Tap map to set dropoff...";
+      _givenRating = 0;
     });
   }
 
-  // 5. THE UI BUILD
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -435,20 +605,21 @@ void _calculateFareStraightLine() {
                 onMapCreated: (controller) => mapController = controller,
                 onTap: _handleMapTap,
               ),
-              
-              // NEW: The Acquiring GPS Badge (Matches the Driver App)
+
               if (_isAcquiringGps)
                 Positioned(
-                  top: 60, // Sits nicely below the status bar
+                  top: 60,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.8),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: flisingOrange.withOpacity(0.5), width: 1),
+                        border: Border.all(
+                            color: flisingOrange.withOpacity(0.5), width: 1),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -458,14 +629,16 @@ void _calculateFareStraightLine() {
                             height: 14,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(flisingOrange),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  flisingOrange),
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Text(
-                            "Acquiring GPS...",
-                            style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
+                          const Text("Acquiring GPS...",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -478,7 +651,9 @@ void _calculateFareStraightLine() {
                   child: Container(
                     margin: const EdgeInsets.all(16),
                     padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(color: darkSurface, borderRadius: BorderRadius.circular(24)),
+                    decoration: BoxDecoration(
+                        color: darkSurface,
+                        borderRadius: BorderRadius.circular(24)),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -486,159 +661,279 @@ void _calculateFareStraightLine() {
                           Row(
                             children: [
                               GestureDetector(
-  onTap: () {
-    setState(() {
-      _customPickupLocation = null;
-      _pickupText = "My Current Location";
-    });
-    mapController.animateCamera(CameraUpdate.newLatLngZoom(_myLocation, 16.0));
-  },
-  child: Icon(Icons.my_location, color: flisingOrange, size: 20),
-),
+                                onTap: () {
+                                  setState(() {
+                                    _customPickupLocation = null;
+                                    _pickupText = "My Current Location";
+                                  });
+                                  mapController.animateCamera(
+                                      CameraUpdate.newLatLngZoom(
+                                          _myLocation, 16.0));
+                                },
+                                child: Icon(Icons.my_location,
+                                    color: flisingOrange, size: 20),
+                              ),
                               const SizedBox(width: 12),
-                              Expanded(child: Text(_pickupText, style: const TextStyle(color: Colors.white, fontSize: 16))),
-                              IconButton(icon: const Icon(Icons.search, color: Colors.white54), onPressed: () => _showLocationSearchSheet(true)),
+                              Expanded(
+                                  child: Text(_pickupText,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16))),
+                              IconButton(
+                                  icon: const Icon(Icons.search,
+                                      color: Colors.white54),
+                                  onPressed: () =>
+                                      _showLocationSearchSheet(true)),
                             ],
                           ),
                           const Divider(color: Colors.white12),
                           Row(
                             children: [
-                              Icon(Icons.location_on, color: _dropoffLocation != null ? flisingOrange : Colors.white54, size: 20),
+                              Icon(Icons.location_on,
+                                  color: _dropoffLocation != null
+                                      ? flisingOrange
+                                      : Colors.white54,
+                                  size: 20),
                               const SizedBox(width: 12),
-                              Expanded(child: Text(_dropoffText, style: const TextStyle(color: Colors.white, fontSize: 16))),
-                              IconButton(icon: const Icon(Icons.search, color: Colors.white54), onPressed: () => _showLocationSearchSheet(false)),
+                              Expanded(
+                                  child: Text(_dropoffText,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16))),
+                              IconButton(
+                                  icon: const Icon(Icons.search,
+                                      color: Colors.white54),
+                                  onPressed: () =>
+                                      _showLocationSearchSheet(false)),
                             ],
                           ),
                           const SizedBox(height: 12),
-if (_dropoffLocation != null)
-  Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    decoration: BoxDecoration(
-      color: Colors.black,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: flisingOrange.withOpacity(0.4)),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(children: [
-          Icon(Icons.payments_outlined, color: flisingOrange, size: 18),
-          const SizedBox(width: 8),
-          const Text("Estimated Fare", style: TextStyle(color: Colors.white54, fontSize: 13)),
-        ]),
-        Text(_estimatedFare, style: TextStyle(color: flisingOrange, fontSize: 18, fontWeight: FontWeight.bold)),
-      ],
-    ),
-  ),
+                          if (_dropoffLocation != null)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: flisingOrange.withOpacity(0.4)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(children: [
+                                    Icon(Icons.payments_outlined,
+                                        color: flisingOrange, size: 18),
+                                    const SizedBox(width: 8),
+                                    const Text("Estimated Fare",
+                                        style: TextStyle(
+                                            color: Colors.white54,
+                                            fontSize: 13)),
+                                  ]),
+                                  Text(_estimatedFare,
+                                      style: TextStyle(
+                                          color: flisingOrange,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            ),
                           ElevatedButton(
                             onPressed: () {
                               if (!_isVerified) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                  content: const Text('Please go to profile to complete verification'),
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: const Text(
+                                      'Please go to profile to complete verification'),
                                   backgroundColor: flisingOrange,
                                 ));
                               } else if (_dropoffLocation != null) {
                                 _showPaymentSelection();
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                  content: const Text('Set a dropoff location first'),
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  content: const Text(
+                                      'Set a dropoff location first'),
                                   backgroundColor: flisingOrange,
                                 ));
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isVerified ? flisingOrange : Colors.grey[850],
+                              backgroundColor: _isVerified
+                                  ? flisingOrange
+                                  : Colors.grey[850],
                               minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
-                            child: const Text("REQUEST RIDE", style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: const Text("REQUEST RIDE",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ],
-                        
+
                         if (_rideStatus == 'SEARCHING') ...[
-                          const CircularProgressIndicator(color: Color(0xFFE9692C)),
+                          const CircularProgressIndicator(
+                              color: Color(0xFFE9692C)),
                           const SizedBox(height: 20),
-                          const Text("Connecting you to the nearest available driver...", 
-  style: TextStyle(color: Colors.white), textAlign: TextAlign.center),
+                          const Text(
+                              "Connecting you to the nearest available driver...",
+                              style: TextStyle(color: Colors.white),
+                              textAlign: TextAlign.center),
                           const SizedBox(height: 24),
-                          ElevatedButton(onPressed: _cancelRide, child: const Text("CANCEL")),
+                          ElevatedButton(
+                              onPressed: _cancelRide,
+                              child: const Text("CANCEL")),
                         ],
-                        
+
                         if (_rideStatus == 'ACCEPTED') ...[
-                          const Text("DRIVER ON THE WAY", style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                          const Text("DRIVER ON THE WAY",
+                              style: TextStyle(
+                                  color: Colors.greenAccent,
+                                  fontWeight: FontWeight.bold)),
                           const SizedBox(height: 10),
                           Row(
                             children: [
                               CircleAvatar(
-  backgroundImage: _driverPhoto != null
-      ? NetworkImage(_driverPhoto!) : null,
-  child: _driverPhoto == null
-      ? const Icon(Icons.person, color: Colors.white) : null,
-),
+                                backgroundImage: _driverPhoto != null
+                                    ? NetworkImage(_driverPhoto!)
+                                    : null,
+                                child: _driverPhoto == null
+                                    ? const Icon(Icons.person,
+                                        color: Colors.white)
+                                    : null,
+                              ),
                               const SizedBox(width: 16),
-   Text(_driverName ?? 'Driver'),
+                              Text(_driverName ?? 'Driver',
+                                  style: const TextStyle(color: Colors.white)),
                               IconButton(
-                                icon: const Icon(Icons.phone_in_talk, color: Colors.greenAccent),
- onPressed: () => launchUrl(
-    Uri(scheme: 'tel', path: _driverPhone ?? '')),
+                                icon: const Icon(Icons.phone_in_talk,
+                                    color: Colors.greenAccent),
+                                onPressed: () => launchUrl(Uri(
+                                    scheme: 'tel',
+                                    path: _driverPhone ?? '')),
                               ),
                             ],
                           ),
-                          if (_showCancelButton) ElevatedButton(onPressed: _cancelRide, child: const Text("CANCEL RIDE")),
+                          if (_showCancelButton)
+                            ElevatedButton(
+                                onPressed: _cancelRide,
+                                child: const Text("CANCEL RIDE")),
+                        ],
+
+                        if (_rideStatus == 'IN_PROGRESS') ...[
+                          const Text("RIDE IN PROGRESS",
+                              style: TextStyle(
+                                  color: Colors.greenAccent,
+                                  fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundImage: _driverPhoto != null
+                                    ? NetworkImage(_driverPhoto!)
+                                    : null,
+                                child: _driverPhoto == null
+                                    ? const Icon(Icons.person,
+                                        color: Colors.white)
+                                    : null,
+                              ),
+                              const SizedBox(width: 16),
+                              Text(_driverName ?? 'Driver',
+                                  style: const TextStyle(color: Colors.white)),
+                              IconButton(
+                                icon: const Icon(Icons.phone_in_talk,
+                                    color: Colors.greenAccent),
+                                onPressed: () => launchUrl(Uri(
+                                    scheme: 'tel',
+                                    path: _driverPhone ?? '')),
+                              ),
+                            ],
+                          ),
                         ],
                       ],
                     ),
                   ),
                 ),
               ),
-              
-              if (_showCompletionPopup) Container(
-                color: Colors.black87,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(30),
-                    margin: const EdgeInsets.symmetric(horizontal: 30),
-                    decoration: BoxDecoration(color: darkSurface, borderRadius: BorderRadius.circular(24)),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check_circle, color: flisingOrange, size: 60),
-                        const SizedBox(height: 20),
-                        const Text("Thank you for choosing Flising.", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(5, (index) => IconButton(
-                            icon: Icon(index < _givenRating ? Icons.star : Icons.star_border, color: flisingOrange),
-                            onPressed: () => setState(() => _givenRating = index + 1),
-                          )),
-                        ),
-                        const SizedBox(height: 30),
-                        ElevatedButton(onPressed: _submitRating, child: const Text("SUBMIT")),
-                      ],
+
+              if (_showCompletionPopup)
+                Container(
+                  color: Colors.black87,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(30),
+                      margin:
+                          const EdgeInsets.symmetric(horizontal: 30),
+                      decoration: BoxDecoration(
+                          color: darkSurface,
+                          borderRadius: BorderRadius.circular(24)),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle,
+                              color: flisingOrange, size: 60),
+                          const SizedBox(height: 20),
+                          const Text(
+                              "Thank you for choosing Flising.",
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
+                            children: List.generate(
+                                5,
+                                (index) => IconButton(
+                                      icon: Icon(
+                                          index < _givenRating
+                                              ? Icons.star
+                                              : Icons.star_border,
+                                          color: flisingOrange),
+                                      onPressed: () => setState(
+                                          () => _givenRating =
+                                              index + 1),
+                                    )),
+                          ),
+                          const SizedBox(height: 30),
+                          ElevatedButton(
+                              onPressed: _submitRating,
+                              child: const Text("SUBMIT")),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
           const PassengerHistory(),
           const PassengerProfilePage(),
         ],
       ),
-      bottomNavigationBar: _rideStatus == 'IDLE' && !_showCompletionPopup ? BottomNavigationBar(
-        backgroundColor: Colors.black,
-        selectedItemColor: flisingOrange,
-        unselectedItemColor: Colors.white54,
-        currentIndex: _selectedView,
-        onTap: (index) => setState(() => _selectedView = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Ride'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ) : null,
+      bottomNavigationBar:
+          _rideStatus == 'IDLE' && !_showCompletionPopup
+              ? BottomNavigationBar(
+                  backgroundColor: Colors.black,
+                  selectedItemColor: flisingOrange,
+                  unselectedItemColor: Colors.white54,
+                  currentIndex: _selectedView,
+                  onTap: (index) =>
+                      setState(() => _selectedView = index),
+                  items: const [
+                    BottomNavigationBarItem(
+                        icon: Icon(Icons.map), label: 'Ride'),
+                    BottomNavigationBarItem(
+                        icon: Icon(Icons.history), label: 'History'),
+                    BottomNavigationBarItem(
+                        icon: Icon(Icons.person), label: 'Profile'),
+                  ],
+                )
+              : null,
     );
   }
 }
