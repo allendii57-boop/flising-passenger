@@ -527,7 +527,7 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
         setState(() {
           _driverName = d['fullName'] ?? 'Driver';
           _driverPhone = d['phoneNumber'] ?? '';
-          _driverPhoto = d['photoUrl'];
+          _driverPhoto = d['profileImageUrl'];
         });
       }
     });
