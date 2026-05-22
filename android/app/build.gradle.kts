@@ -36,10 +36,5 @@ android {
 flutter {
     source = "../.."
 }
-git add android/app/build.gradle.kts
-git commit -m "Fix versionCode and versionName Gradle KTS syntax"
-git tag v1.0.2
-git push origin main v1.0.2
 
-0
 
