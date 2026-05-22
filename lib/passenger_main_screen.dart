@@ -294,70 +294,57 @@ void _calculateFareStraightLine() {
   }
 
   // 4. THE HANDSHAKE ENGINE (FIREBASE)
-  void _findClosestDriver() async {
-    setState(() { _rideStatus = 'SEARCHING'; });
-    _locationStream?.cancel();
+  Future<void> _findClosestDriver() async {
+  try {
+    final driversSnapshot = await FirebaseDatabase.instance
+        .ref('drivers')
+        .orderByChild('isOnline')
+        .equalTo(true)
+        .get();
 
-    DatabaseReference dbRef = FirebaseDatabase.instance.ref();
-    User? currentUser = FirebaseAuth.instance.currentUser;
-    String newRideId = dbRef.child('rides').push().key!;
-    _currentRideId = newRideId;
+    if (!driversSnapshot.exists) {
+      print('No online drivers found');
+      return;
+    }
 
-    await dbRef.child('rides/$newRideId').set({
-      'passengerId': currentUser?.uid ?? 'unknown_passenger',
-      'assignedDriverId': 'pending_driver_search',
-      'pickupText': _pickupText,
-      'dropoffText': _dropoffText,
-      'fare': _estimatedFare,
-      'paymentMethod': 'CASH',
-      'pickupLat': (_customPickupLocation ?? _myLocation).latitude,
-      'pickupLng': (_customPickupLocation ?? _myLocation).longitude,
-      'dropoffLat': _dropoffLocation!.latitude,
-      'dropoffLng': _dropoffLocation!.longitude,
-      'status': 'PENDING',
-      'timestamp': ServerValue.timestamp,
-    });
+    String? closestDriverId;
+    double closestDistance = double.infinity;
 
-    _ticketListener = dbRef.child('rides/$newRideId').onValue.listen((event) {
-      if (event.snapshot.exists) {
-        final rideData = event.snapshot.value as Map<dynamic, dynamic>;
-        String currentStatus = rideData['status'];
-        if (!mounted) return;
+    final passengerLat = _currentPosition!.latitude;
+    final passengerLng = _currentPosition!.longitude;
 
-        if (currentStatus == 'ACCEPTED' && _rideStatus != 'ACCEPTED') {
-          setState(() { 
-            _rideStatus = 'ACCEPTED'; 
-            _assignedDriverId = rideData['assignedDriverId'];
-            _showCancelButton = false; 
-          });
-          _startTrackingDriver();
-          Timer(const Duration(seconds: 5), () {
-            if (mounted && _rideStatus == 'ACCEPTED') setState(() { _showCancelButton = true; });
-          });
-        } else if (currentStatus == 'IN_PROGRESS' && _rideStatus != 'IN_PROGRESS') {
-          setState(() { _rideStatus = 'IN_PROGRESS'; _showCancelButton = false; });
-        } else if (currentStatus == 'COMPLETED') {
-          setState(() {
-            _lastCompletedRideId = _currentRideId;
-            _rideStatus = 'IDLE';
-            _currentRideId = null;
-            _showCompletionPopup = true;
-          });
-          _ticketListener?.cancel();
-          _stopTrackingDriver();
-        }
+    driversSnapshot.children.forEach((driverSnap) {
+      final data = driverSnap.value as Map<dynamic, dynamic>;
+      final driverLat = data['latitude']?.toDouble();
+      final driverLng = data['longitude']?.toDouble();
+
+      if (driverLat == null || driverLng == null) return;
+
+      final distance = Geolocator.distanceBetween(
+        passengerLat,
+        passengerLng,
+        driverLat,
+        driverLng,
+      );
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestDriverId = driverSnap.key;
       }
     });
-    Future.delayed(const Duration(seconds: 60), () {
-  if (mounted && _rideStatus == 'SEARCHING') {
-    _cancelRide();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('No drivers available right now. Please try again in a few minutes.'),
-      backgroundColor: Colors.red,
-      duration: Duration(seconds: 5),
-    ));
+
+    if (closestDriverId != null) {
+      await FirebaseDatabase.instance
+          .ref('rides/$_currentRideId')
+          .update({'assignedDriverId': closestDriverId});
+
+      print('Assigned driver: $closestDriverId');
+    } else {
+      print('No drivers with valid location found');
+    }
+  } catch (e) {
+    print('Error finding closest driver: $e');
   }
-});
   }
   
 
