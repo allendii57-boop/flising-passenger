@@ -294,57 +294,111 @@ void _calculateFareStraightLine() {
   }
 
   // 4. THE HANDSHAKE ENGINE (FIREBASE)
-  Future<void> _findClosestDriver() async {
-  try {
-    final driversSnapshot = await FirebaseDatabase.instance
-        .ref('drivers')
-        .orderByChild('isOnline')
-        .equalTo(true)
-        .get();
+  void _findClosestDriver() async {
+  setState(() { _rideStatus = 'SEARCHING'; });
+  _locationStream?.cancel();
 
-    if (!driversSnapshot.exists) {
-      print('No online drivers found');
-      return;
-    }
+  User? currentUser = FirebaseAuth.instance.currentUser;
+  final db = FirebaseDatabase.instanceFor(
+    app: Firebase.app(),
+    databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+  );
 
-    String? closestDriverId;
-    double closestDistance = double.infinity;
+  // Find nearest online driver
+  final driversSnap = await db.ref('drivers').get();
+  String? closestDriverId;
+  double closestDistance = double.infinity;
 
-    final passengerLat = _currentPosition!.latitude;
-    final passengerLng = _currentPosition!.longitude;
-
-    driversSnapshot.children.forEach((driverSnap) {
-      final data = driverSnap.value as Map<dynamic, dynamic>;
-      final driverLat = data['latitude']?.toDouble();
-      final driverLng = data['longitude']?.toDouble();
-
-      if (driverLat == null || driverLng == null) return;
-
-      final distance = Geolocator.distanceBetween(
-        passengerLat,
-        passengerLng,
-        driverLat,
-        driverLng,
-      );
-
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestDriverId = driverSnap.key;
+  if (driversSnap.exists) {
+    final driversMap = driversSnap.value as Map<dynamic, dynamic>;
+    driversMap.forEach((driverId, driverData) {
+      if (driverData is! Map) return;
+      final isOnline = driverData['isOnline'] as bool? ?? false;
+      if (!isOnline) return;
+      final lat = (driverData['latitude'] as num?)?.toDouble();
+      final lng = (driverData['longitude'] as num?)?.toDouble();
+      if (lat == null || lng == null) return;
+      final dist = Geolocator.distanceBetween(
+        _myLocation.latitude, _myLocation.longitude, lat, lng);
+      if (dist < closestDistance) {
+        closestDistance = dist;
+        closestDriverId = driverId as String;
       }
     });
-
-    if (closestDriverId != null) {
-      await FirebaseDatabase.instance
-          .ref('rides/$_currentRideId')
-          .update({'assignedDriverId': closestDriverId});
-
-      print('Assigned driver: $closestDriverId');
-    } else {
-      print('No drivers with valid location found');
-    }
-  } catch (e) {
-    print('Error finding closest driver: $e');
   }
+
+  if (closestDriverId == null) {
+    if (mounted) {
+      setState(() { _rideStatus = 'IDLE'; });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No drivers online right now. Please try again.'),
+        backgroundColor: Colors.red,
+      ));
+    }
+    return;
+  }
+
+  // Create ride with real driver UID
+  final ridesRef = db.ref('rides');
+  String newRideId = ridesRef.push().key!;
+  _currentRideId = newRideId;
+
+  await db.ref('rides/$newRideId').set({
+    'passengerId': currentUser?.uid ?? 'unknown_passenger',
+    'assignedDriverId': closestDriverId,
+    'pickupText': _pickupText,
+    'dropoffText': _dropoffText,
+    'fare': _estimatedFare,
+    'paymentMethod': 'CASH',
+    'pickupLat': (_customPickupLocation ?? _myLocation).latitude,
+    'pickupLng': (_customPickupLocation ?? _myLocation).longitude,
+    'dropoffLat': _dropoffLocation!.latitude,
+    'dropoffLng': _dropoffLocation!.longitude,
+    'status': 'PENDING',
+    'timestamp': ServerValue.timestamp,
+  });
+
+  _ticketListener = db.ref('rides/$newRideId').onValue.listen((event) {
+    if (event.snapshot.exists) {
+      final rideData = event.snapshot.value as Map<dynamic, dynamic>;
+      String currentStatus = rideData['status'];
+      if (!mounted) return;
+
+      if (currentStatus == 'ACCEPTED' && _rideStatus != 'ACCEPTED') {
+        setState(() {
+          _rideStatus = 'ACCEPTED';
+          _assignedDriverId = rideData['assignedDriverId'];
+          _showCancelButton = false;
+        });
+        _startTrackingDriver();
+        Timer(const Duration(seconds: 5), () {
+          if (mounted && _rideStatus == 'ACCEPTED') setState(() { _showCancelButton = true; });
+        });
+      } else if (currentStatus == 'IN_PROGRESS' && _rideStatus != 'IN_PROGRESS') {
+        setState(() { _rideStatus = 'IN_PROGRESS'; _showCancelButton = false; });
+      } else if (currentStatus == 'COMPLETED') {
+        setState(() {
+          _lastCompletedRideId = _currentRideId;
+          _rideStatus = 'IDLE';
+          _currentRideId = null;
+          _showCompletionPopup = true;
+        });
+        _ticketListener?.cancel();
+        _stopTrackingDriver();
+      }
+    }
+  });
+
+  Future.delayed(const Duration(seconds: 60), () {
+    if (mounted && _rideStatus == 'SEARCHING') {
+      _cancelRide();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No response from driver. Please try again.'),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 5),
+      ));
+    }
+  });
   }
   
 
