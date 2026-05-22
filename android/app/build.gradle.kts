@@ -22,8 +22,8 @@ android {
         applicationId = "com.flisingpassenger.app"
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode()
-        versionName = flutter.versionName()
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
     }
 
     buildTypes {
@@ -36,3 +36,10 @@ android {
 flutter {
     source = "../.."
 }
+git add android/app/build.gradle.kts
+git commit -m "Fix versionCode and versionName Gradle KTS syntax"
+git tag v1.0.2
+git push origin main v1.0.2
+
+0
+
