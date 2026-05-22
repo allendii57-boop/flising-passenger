@@ -1,4 +1,4 @@
-⁶final List<Map<String, dynamic>> vanimoLocations = [
+final List<Map<String, dynamic>> vanimoLocations = [
 {"name": "JB Fuel", "lat": -2.695689, "lng": 141.302769},
 {"name": "Papindo", "lat": -2.684999, "lng": 141.300611},
 {"name": "Tinglaching Enterprise Ltd", "lat": -2.695996, "lng": 141.303164},
