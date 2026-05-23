@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -150,6 +151,18 @@ _locationStream = Geolocator.getPositionStream(
     }
   }
 
+Future<void> _saveFcmToken() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+  final token = await FirebaseMessaging.instance.getToken();
+  if (token != null) {
+    await FirebaseDatabase.instanceFor(
+      app: Firebase.app(),
+      databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+    ).ref('users/passengers/${user.uid}/fcmToken').set(token);
+  }
+}
+  
     Future<void> _calculateFare() async {
   if (_dropoffLocation == null) return;
   final activePickup = _customPickupLocation ?? _myLocation;
