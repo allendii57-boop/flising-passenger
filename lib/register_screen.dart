@@ -56,9 +56,19 @@ await FirebaseDatabase.instance
         
            // 3. SEND VERIFICATION & SIGN OUT IMMEDIATELY
       // Do this before checking if mounted so auto-routers don't hijack the user
-      await userCredential.user?.sendEmailVerification();
-      await _auth.signOut(); 
-
+      try {
+  await userCredential.user?.sendEmailVerification();
+  print('✅ Verification email sent to: ${_emailController.text.trim()}');
+} catch (e) {
+  print('❌ sendEmailVerification failed: $e');
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Could not send verification email: $e'),
+      backgroundColor: Colors.red,
+    ));
+  }
+}
+await _auth.signOut();
       if (mounted) {
           
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
