@@ -64,11 +64,11 @@ String? _driverPhoto;
 
   @override
   void initState() {
-    super.initState();
-    _goToMyLocation();
-    _checkVerificationStatus(); 
+  super.initState();
+  _saveFcmToken(); // ADD THIS
+  _goToMyLocation();
+  _checkVerificationStatus();
   }
-
   @override
   void dispose() {
     _ticketListener?.cancel();
