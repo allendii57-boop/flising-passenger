@@ -744,47 +744,48 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
                         ],
 
                         if (_rideStatus == 'ACCEPTED') ...[
-                          const Text("DRIVER ON THE WAY",
-                              style: TextStyle(
-                                  color: Colors.greenAccent,
-                                  fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundImage: _driverPhoto != null
-                                    ? NetworkImage(_driverPhoto!)
-                                    : null,
-                                child: _driverPhoto == null
-                                    ? const Icon(Icons.person,
-                                        color: Colors.white)
-                                    : null,
-                              ),
-                              const SizedBox(width: 16),
-                              Text(_driverName ?? 'Driver',
-                                  style: const TextStyle(
-                                      color: Colors.white)),
-                              
-                                IconButton(
-  icon: const Icon(Icons.call,
-    color: Colors.greenAccent),
-  onPressed: () {
-    Navigator.push(context, MaterialPageRoute(
-      builder: (_) => CallScreen(
-        rideId: _currentRideId!,
-        callerType: 'passenger',
-        otherPersonName: _driverName ?? 'Driver',
-        otherPersonPhoto: _driverPhoto,
+  const Text("DRIVER ON THE WAY",
+      style: TextStyle(
+          color: Colors.greenAccent,
+          fontWeight: FontWeight.bold)),
+  const SizedBox(height: 10),
+  Row(
+    children: [
+      CircleAvatar(
+        backgroundImage: _driverPhoto != null
+            ? NetworkImage(_driverPhoto!)
+            : null,
+        child: _driverPhoto == null
+            ? const Icon(Icons.person,
+                color: Colors.white)
+            : null,
       ),
-    ));
-  },
-),
-    
+      const SizedBox(width: 16),
+      Text(_driverName ?? 'Driver',
+          style: const TextStyle(
+              color: Colors.white)),
       IconButton(
-        icon: const Icon(Icons.chat_bubble_outline,
+        icon: const Icon(Icons.call,
+            color: Colors.greenAccent),
+        onPressed: () {
+          Navigator.push(context,
+              MaterialPageRoute(
+            builder: (_) => CallScreen(
+              rideId: _currentRideId!,
+              callerType: 'passenger',
+              otherPersonName: _driverName ?? 'Driver',
+              otherPersonPhoto: _driverPhoto,
+            ),
+          ));
+        },
+      ),
+      IconButton(
+        icon: const Icon(
+            Icons.chat_bubble_outline,
             color: Colors.white),
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(
+          Navigator.push(context,
+              MaterialPageRoute(
             builder: (_) => ChatScreen(
               rideId: _currentRideId!,
               senderType: 'passenger',
@@ -794,14 +795,13 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
           ));
         },
       ),
-                            ],
-                          ),
-                          if (_showCancelButton)
-                            ElevatedButton(
-                                onPressed: _cancelRide,
-                                child:
-                                    const Text("CANCEL RIDE")),
-                        ],
+    ],
+  ),
+  if (_showCancelButton)
+    ElevatedButton(
+        onPressed: _cancelRide,
+        child: const Text("CANCEL RIDE")),
+],
                       ],
                     ),
                   ),
