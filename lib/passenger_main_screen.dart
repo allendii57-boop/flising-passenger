@@ -764,23 +764,21 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
                               Text(_driverName ?? 'Driver',
                                   style: const TextStyle(
                                       color: Colors.white)),
-                              IconButton(
-                                icon: const Icon(Icons.phone_in_talk,
-                                    color: Colors.greenAccent),
-                                onPressed: () => launchUrl(Uri(
-                                    scheme: 'tel',
-                                    path: _driverPhone ?? '')),
-                              ),
-                              // In the ACCEPTED block, after the phone IconButton:
-IconButton(
-  icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+                              
+                                IconButton(
+  icon: const Icon(Icons.call,
+    color: Colors.greenAccent),
   onPressed: () {
     Navigator.push(context, MaterialPageRoute(
-      builder: (_) => ChatScreen(
+      builder: (_) => CallScreen(
         rideId: _currentRideId!,
-        senderType: 'passenger',
+        callerType: 'passenger',
         otherPersonName: _driverName ?? 'Driver',
         otherPersonPhoto: _driverPhoto,
+      ),
+    ));
+  },
+),
       ),
     ));
   },
