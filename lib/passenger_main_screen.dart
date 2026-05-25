@@ -11,6 +11,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'dart:async';
 
 import 'live_map.dart';
+import 'chat_screen.dart';
 import 'passenger_history.dart';
 import 'passenger_profile.dart';
 import 'quick_places_list.dart';
@@ -769,6 +770,20 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
                                     scheme: 'tel',
                                     path: _driverPhone ?? '')),
                               ),
+                              // In the ACCEPTED block, after the phone IconButton:
+IconButton(
+  icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+  onPressed: () {
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => ChatScreen(
+        rideId: _currentRideId!,
+        senderType: 'passenger',
+        otherPersonName: _driverName ?? 'Driver',
+        otherPersonPhoto: _driverPhoto,
+      ),
+    ));
+  },
+),
                             ],
                           ),
                           if (_showCancelButton)
