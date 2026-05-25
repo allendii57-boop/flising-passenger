@@ -1,0 +1,57 @@
+name: flising_passenger
+description: Premium ride hailing platform for passengers.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Maps & Location
+  google_maps_flutter: ^2.10.0
+  geolocator: ^13.0.2
+  geocoding: ^2.1.1
+
+  # Networking
+  http: ^1.2.2
+
+  # Firebase
+  firebase_core: ^3.13.1
+  firebase_auth: ^5.5.2
+  firebase_database: ^11.3.5
+  firebase_storage: ^12.4.5
+  firebase_messaging: ^15.2.5
+  cloud_firestore: ^6.3.0
+
+  # Media
+  image_picker: ^1.1.2
+
+  # Utils
+  url_launcher: ^6.3.1
+  permission_handler: ^12.0.0+1
+  path_provider: ^2.1.4
+
+  # Agora Voice Calls
+  agora_rtc_engine: ^6.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/flising_logo.png
+    - assets/images/flising_apk_logo.png
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/flising_apk_logo.png"
+  min_sdk_android: 21
