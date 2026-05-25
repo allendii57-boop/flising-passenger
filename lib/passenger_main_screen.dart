@@ -12,6 +12,7 @@ import 'dart:async';
 
 import 'live_map.dart';
 import 'chat_screen.dart';
+import 'call_screen.dart';
 import 'passenger_history.dart';
 import 'passenger_profile.dart';
 import 'quick_places_list.dart';
