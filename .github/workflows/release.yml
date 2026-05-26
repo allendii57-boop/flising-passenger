@@ -19,7 +19,7 @@ jobs:
         with:
           flutter-version: '3.32.0'
       - run: flutter pub get
-      - run: flutter build apk --release
+      - run: flutter build apk --release --split-per-abi
       - uses: softprops/action-gh-release@v1
         with:
           files: build/app/outputs/flutter-apk/app-release.apk
