@@ -39,8 +39,8 @@ class FlisingPassengerApp extends StatelessWidget {
 
       // Your app's map of routes
       routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
+        '/login': (context) => const PassengerLoginScreen(),
+        '/register': (context) => const PassengerRegisterScreen(),
         '/splash': (context) => const SplashScreen(),
         '/passenger_main': (context) => const PassengerMainScreen(),
       },
