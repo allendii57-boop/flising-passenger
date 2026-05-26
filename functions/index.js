@@ -122,7 +122,7 @@ exports.notifyPassengerRideAccepted = functions.database
       const ride = rideSnap.val();
 
       const passengerSnap = await admin.database()
-        .ref(`users/passengers/${ride.passengerId}/fcmToken`)
+        .ref(`passengers/${ride.passengerId}/fcmToken`)
         .get();
 
       if (!passengerSnap.exists()) return null;
@@ -165,6 +165,60 @@ exports.sendDriverApprovalEmail = functions.database
           </div>
         `
       });
+    }
+    return null;
+  });
+
+// ==========================================
+// 6. PUSH NOTIFICATION — ride completed
+// ==========================================
+exports.notifyRideCompleted = functions.database
+  .ref('rides/{rideId}/status')
+  .onUpdate(async (change, context) => {
+    const before = change.before.val();
+    const after = change.after.val();
+
+    if (before !== 'COMPLETED' && after === 'COMPLETED') {
+      const rideSnap = await admin.database()
+        .ref(`rides/${context.params.rideId}`)
+        .get();
+      const ride = rideSnap.val();
+
+      const passengerSnap = await admin.database()
+        .ref(`passengers/${ride.passengerId}/fcmToken`)
+        .get();
+
+      const driverSnap = await admin.database()
+        .ref(`drivers/${ride.driverId}/fcmToken`)
+        .get();
+
+      const sends = [];
+
+      if (passengerSnap.exists()) {
+        sends.push(admin.messaging().send({
+          token: passengerSnap.val(),
+          notification: {
+            title: '🏁 Ride Completed!',
+            body: 'Thank you for riding with Flising!',
+          },
+          data: { rideId: context.params.rideId, type: 'RIDE_COMPLETED' },
+          android: { priority: 'high', notification: { sound: 'default' } }
+        }));
+      }
+
+      if (driverSnap.exists()) {
+        sends.push(admin.messaging().send({
+          token: driverSnap.val(),
+          notification: {
+            title: '🏁 Ride Completed!',
+            body: 'Great job! Payment is being processed.',
+          },
+          data: { rideId: context.params.rideId, type: 'RIDE_COMPLETED' },
+          android: { priority: 'high', notification: { sound: 'default' } }
+        }));
+      }
+
+      return Promise.all(sends);
     }
     return null;
   });

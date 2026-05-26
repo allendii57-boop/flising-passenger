@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
-import 'register_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart'; // REQUIRED to prevent the blank screen crash!
-
-// Your local screen imports
-import 'login_screen.dart';
+import 'firebase_options.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'notification_service.dart';
 import 'splash_screen.dart';
-import 'passenger_main_screen.dart';
+import 'login_screen.dart';
 import 'register_screen.dart';
+import 'passenger_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Waking up Firebase with the proper platform options
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FirebaseMessaging.onBackgroundMessage(
+    firebaseMessagingBackgroundHandler
+  );
+
+  await NotificationService.initialize();
 
   runApp(const FlisingPassengerApp());
 }
@@ -28,16 +31,12 @@ class FlisingPassengerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flising Passenger',
-      debugShowCheckedModeBanner: false, // Removes the red "DEBUG" banner
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.black, // Flising Dark Theme
+        scaffoldBackgroundColor: Colors.black,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-
-      // The app now boots DIRECTLY to the Splash Screen
       home: const SplashScreen(),
-
-      // Your app's map of routes
       routes: {
         '/login': (context) => const PassengerLoginScreen(),
         '/register': (context) => const PassengerRegisterScreen(),
