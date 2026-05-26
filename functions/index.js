@@ -139,3 +139,32 @@ exports.notifyPassengerRideAccepted = functions.database
     }
     return null;
   });
+
+// ============================================
+// 5. DRIVER APPROVAL EMAIL
+// ============================================
+exports.sendDriverApprovalEmail = functions.database
+  .ref('drivers/{uid}/profile')
+  .onUpdate(async (change, context) => {
+    const before = change.before.val();
+    const after = change.after.val();
+
+    if (!before.isVerified && after.isVerified) {
+      return transporter.sendMail({
+        from: 'Flising <yourflising@gmail.com>',
+        to: after.email,
+        subject: '✅ You are now verified on Flising!',
+        html: `
+          <div style="font-family:Arial;max-width:500px;margin:auto">
+            <h2 style="color:#E9692C">You're Verified!</h2>
+            <p>Hi ${after.fullName || 'Driver'},</p>
+            <p>Your documents have been reviewed and approved.</p>
+            <p>You can now go online and start accepting rides!</p>
+            <br/>
+            <p style="color:#888">— The Flising Team</p>
+          </div>
+        `
+      });
+    }
+    return null;
+  });
