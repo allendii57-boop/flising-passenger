@@ -1,97 +1,130 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Added to check login status
+import 'dart:math';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+    Future.delayed(const Duration(seconds: 4), () {
+      if (mounted) Navigator.pushReplacementNamed(context, '/login');
+    });
   }
 
-  _initializeApp() async {
-    // 1. Simulate a premium loading sequence
-    print("Flising Passenger: Booting up platform...");
-    await Future.delayed(const Duration(seconds: 3));
-
-    // 2. The Gatekeeper: Check if the user is already logged in
-    if (mounted) {
-      User? currentUser = FirebaseAuth.instance.currentUser;
-
-      if (currentUser != null) {
-        // User has an active account -> go to Map
-        Navigator.pushReplacementNamed(context, '/passenger_main');
-      } else {
-        // First time opening or logged out -> go to Login
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Flising Premium Dark
-      body: Stack(
+      backgroundColor: Colors.black,
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 1. Central Content (Logo, PASSENGER, Spinner)
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // The Official Logo
-                Image.asset(
-                  'assets/images/flising_logo.png', // Matches pubspec exactly
-                  width: 220,
-                  fit: BoxFit.contain,
-                ),
-                const SizedBox(height: 10),
-
-                // Passenger Designation
-                const Text(
-                  "FLISING PASSENGER",
-                  style: TextStyle(
-                    color: Color(0xFFE9692C),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    letterSpacing: 2.0, // Premium spacing
-                  ),
-                ),
-                const SizedBox(height: 50),
-
-                // The Premium Orange Spinner
-                const CircularProgressIndicator(
-                  color: Color(0xFFE9692C), // Flising Orange
-                  strokeWidth: 3.0,
-                ),
-              ],
+          const Spacer(),
+          Image.asset('assets/images/flising_new_logo.jpg', width: 220),
+          const SizedBox(height: 8),
+          const Text('FLISING',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 6)),
+          const SizedBox(height: 8),
+          const Text('PASSENGER',
+              style: TextStyle(
+                  color: Color(0xFFE9692C),
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 8)),
+          const SizedBox(height: 48),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (_, __) => CustomPaint(
+              size: const Size(180, 180),
+              painter: _RingPainter(_controller.value),
             ),
           ),
-
-          // 2. Bottom Hometown Tagline
-          const Positioned(
-            bottom: 60, // Pulled up from 30 to perfectly match the driver app!
-            left: 0,
-            right: 0,
-            child: Text(
-              "FROM VANIMO TO THE WORLD",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                letterSpacing: 1.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          const Spacer(),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 32),
+            child: Text('FROM VANIMO TO THE WORLD',
+                style: TextStyle(
+                    color: Colors.white54,
+                    fontSize: 13,
+                    letterSpacing: 2)),
           ),
         ],
       ),
     );
   }
+}
+
+class _RingPainter extends CustomPainter {
+  final double progress;
+  _RingPainter(this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 10;
+
+    // Orange glow ring
+    final glowPaint = Paint()
+      ..color = const Color(0xFFE9692C).withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 18
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawCircle(center, radius, glowPaint);
+
+    // Orange solid ring
+    final orangePaint = Paint()
+      ..color = const Color(0xFFE9692C)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4;
+    canvas.drawCircle(center, radius, orangePaint);
+
+    // White spinning arc
+    final arcPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      2 * pi * progress - pi / 2,
+      pi * 1.2,
+      false,
+      arcPaint,
+    );
+
+    // Navigation arrow dot
+    final dotAngle = 2 * pi * 0.85 - pi / 2;
+    final dotPos = Offset(
+      center.dx + radius * cos(dotAngle),
+      center.dy + radius * sin(dotAngle),
+    );
+    final dotPaint = Paint()..color = const Color(0xFFE9692C);
+    canvas.drawCircle(dotPos, 8, dotPaint);
+    final iconPaint = Paint()..color = Colors.white;
+    canvas.drawCircle(dotPos, 4, iconPaint);
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) => old.progress != progress;
 }
