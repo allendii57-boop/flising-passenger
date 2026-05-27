@@ -46,6 +46,7 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   String? _assignedDriverId;
   LatLng? _driverLocation;
   bool _showCancelButton = false;
+  int _cancelSecondsLeft = 120;
   bool _showCompletionPopup = false;
   String? _lastCompletedRideId;
     String? _driverName;
@@ -412,7 +413,16 @@ void _calculateFareStraightLine() {
     }
   });
 
-  Future.delayed(const Duration(seconds: 60), () {
+  Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) { timer.cancel(); return; }
+      if (_cancelSecondsLeft > 0) {
+        setState(() => _cancelSecondsLeft--);
+      } else {
+        timer.cancel();
+        if (mounted) setState(() { _showCancelButton = false; _cancelSecondsLeft = 120; });
+      }
+    });
+    Future.delayed(const Duration(seconds: 0), () {
     if (mounted && _rideStatus == 'SEARCHING') {
       _cancelRide();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -459,7 +469,7 @@ void _calculateFareStraightLine() {
   }
 
   void _cancelRide() {
-    setState(() { _rideStatus = 'IDLE'; _showCancelButton = false; });
+    setState(() { _rideStatus = 'IDLE'; _showCancelButton = false; _cancelSecondsLeft = 120; });
     if (_currentRideId != null) {
       FirebaseDatabase.instance.ref('rides/$_currentRideId').update({'status': 'CANCELLED_BY_PASSENGER'});
       _currentRideId = null;
@@ -628,7 +638,11 @@ if (_dropoffLocation != null)
                           const SizedBox(height: 20),
                           const Text("Finding your premium ride...", style: TextStyle(color: Colors.white)),
                           const SizedBox(height: 24),
-                          ElevatedButton(onPressed: _cancelRide, child: const Text("CANCEL")),
+                          ElevatedButton(
+                      onPressed: _cancelRide,
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD32F2F)),
+                      child: Text("CANCEL (${_cancelSecondsLeft}s)"),
+                    ),
                         ],
                         
                         if (_rideStatus == 'ACCEPTED') ...[
