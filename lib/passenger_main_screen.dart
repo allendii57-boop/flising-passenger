@@ -33,6 +33,7 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   String _pickupText = "Fetching location...";
   String _dropoffText = "Tap map to set dropoff...";
   String _estimatedFare = "K 0.00";
+  String _estimatedETA = "";
   double _calculatedFareAmount = 0.0;
   
   String _rideStatus = 'IDLE';
@@ -592,6 +593,8 @@ if (_dropoffLocation != null)
           const Text("Estimated Fare", style: TextStyle(color: Colors.white54, fontSize: 13)),
         ]),
         Text(_estimatedFare, style: TextStyle(color: flisingOrange, fontSize: 18, fontWeight: FontWeight.bold)),
+        if (_estimatedETA.isNotEmpty)
+          Text('~$_estimatedETA', style: const TextStyle(color: Colors.white54, fontSize: 13)),
       ],
     ),
   ),
