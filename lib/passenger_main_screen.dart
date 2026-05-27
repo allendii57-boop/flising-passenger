@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
 import 'live_map.dart';
+import 'route_service.dart';
 import 'passenger_history.dart';
 import 'passenger_profile.dart';
 import 'quick_places_list.dart'; 
@@ -40,6 +41,7 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   StreamSubscription<DatabaseEvent>? _driverLocationListener;
   StreamSubscription<Position>? _locationStream;
   
+  List<LatLng> _routePoints = [];
   String? _assignedDriverId;
   LatLng? _driverLocation;
   bool _showCancelButton = false;
@@ -165,11 +167,13 @@ _locationStream = Geolocator.getPositionStream(
     if (data['status'] == 'OK') {
       final meters = data['routes'][0]['legs'][0]['distance']['value'];
       final distanceInKm = meters / 1000.0;
-      final rawFare = 10.00 + (distanceInKm * 5.00);
+      final rawFare = 7.00 + (distanceInKm * 5.00);
       final finalFare = rawFare.ceilToDouble();
       if (mounted) setState(() {
         _calculatedFareAmount = finalFare;
-        _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
+        _estimatedFare = "K \${finalFare.toStringAsFixed(2)}";
+          final encoded = data['routes'][0]['overview_polyline']['points'];
+          _routePoints = RouteService.decodePolyline(encoded as String);
       });
     } else {
       _calculateFareStraightLine();
@@ -186,7 +190,7 @@ void _calculateFareStraightLine() {
     activePickup.latitude, activePickup.longitude,
     _dropoffLocation!.latitude, _dropoffLocation!.longitude);
   final distanceInKm = distanceInMeters / 1000;
-  final rawFare = 10.00 + (distanceInKm * 5.00);
+  final rawFare = 7.00 + (distanceInKm * 5.00);
   final finalFare = rawFare.ceilToDouble();
   if (mounted) setState(() {
     _calculatedFareAmount = finalFare;
@@ -473,7 +477,8 @@ void _calculateFareStraightLine() {
                 customPickupLocation: _customPickupLocation,
                 dropoffLocation: _dropoffLocation,
                 driverLocation: _driverLocation,
-                onMapCreated: (controller) => mapController = controller,
+                polylinePoints: _routePoints,
+              onMapCreated: (controller) => mapController = controller,
                 onTap: _handleMapTap,
               ),
               

@@ -6,6 +6,7 @@ class LiveMap extends StatelessWidget {
   final LatLng? customPickupLocation;
   final LatLng? dropoffLocation;
   final LatLng? driverLocation;
+  final List<LatLng> polylinePoints;
   final void Function(GoogleMapController) onMapCreated;
   final void Function(LatLng) onTap;
 
@@ -15,6 +16,7 @@ class LiveMap extends StatelessWidget {
     this.customPickupLocation,
     this.dropoffLocation,
     this.driverLocation,
+    this.polylinePoints = const [],
     required this.onMapCreated,
     required this.onTap,
   });
@@ -55,6 +57,19 @@ class LiveMap extends StatelessWidget {
       );
     }
 
+    // 4. Route Polyline
+    Set<Polyline> polylines = {};
+    if (polylinePoints.isNotEmpty) {
+      polylines.add(
+        Polyline(
+          polylineId: const PolylineId('route'),
+          points: polylinePoints,
+          color: const Color(0xFFE9692C),
+          width: 5,
+        ),
+      );
+    }
+
     return GoogleMap(
       onMapCreated: onMapCreated,
       initialCameraPosition: CameraPosition(
@@ -66,6 +81,7 @@ class LiveMap extends StatelessWidget {
       zoomControlsEnabled: false,
       onTap: onTap,
       markers: markers,
+      polylines: polylines,
     );
   }
 }
