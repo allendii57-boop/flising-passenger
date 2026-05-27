@@ -174,6 +174,24 @@ _locationStream = Geolocator.getPositionStream(
         _estimatedFare = "K \${finalFare.toStringAsFixed(2)}";
           final encoded = data['routes'][0]['overview_polyline']['points'];
           _routePoints = RouteService.decodePolyline(encoded as String);
+          // Auto-zoom to fit the route
+          if (_routePoints.isNotEmpty) {
+            double minLat = _routePoints.map((p) => p.latitude).reduce((a, b) => a < b ? a : b);
+            double maxLat = _routePoints.map((p) => p.latitude).reduce((a, b) => a > b ? a : b);
+            double minLng = _routePoints.map((p) => p.longitude).reduce((a, b) => a < b ? a : b);
+            double maxLng = _routePoints.map((p) => p.longitude).reduce((a, b) => a > b ? a : b);
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              mapController.animateCamera(
+                CameraUpdate.newLatLngBounds(
+                  LatLngBounds(
+                    southwest: LatLng(minLat, minLng),
+                    northeast: LatLng(maxLat, maxLng),
+                  ),
+                  80.0,
+                ),
+              );
+            });
+          }
       });
     } else {
       _calculateFareStraightLine();
