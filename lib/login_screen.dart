@@ -66,7 +66,7 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
       ).ref('users/passengers/${refreshed.uid}');
 
       try {
-        final snap = await dbRef.get().timeout(const Duration(seconds: 5));
+        final snap = await dbRef.get().timeout(const Duration(seconds: 10));
         if (!snap.exists) {
           // First verified login — write profile for the first time
           await dbRef.set({
@@ -75,7 +75,7 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
             'role': 'passenger',
             'isVerified': true,
             'registeredAt': ServerValue.timestamp,
-          }).timeout(const Duration(seconds: 5));
+          }).timeout(const Duration(seconds: 10));
         }
       } catch (e) {
         // DB write failed — allow login, retries next time

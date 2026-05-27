@@ -37,14 +37,8 @@ class _SplashScreenState extends State<SplashScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Spacer(),
-          Image.asset('assets/images/flising_new_logo.jpg', width: 220),
+          Image.asset('assets/images/flising_new_logo.jpg', width: MediaQuery.of(context).size.width * 0.6),
           const SizedBox(height: 8),
-          const Text('FLISING',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 6)),
           const SizedBox(height: 8),
           const Text('PASSENGER',
               style: TextStyle(
