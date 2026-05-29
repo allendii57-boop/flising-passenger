@@ -423,8 +423,8 @@ void _calculateFareStraightLine() {
         if (mounted) setState(() { _showCancelButton = false; _cancelSecondsLeft = 120; });
       }
     });
-    Future.delayed(const Duration(seconds: 0), () {
-    if (mounted && _rideStatus == 'SEARCHING') {
+    Future.delayed(const Duration(seconds: 30), () {
+    if (mounted && _rideStatus != 'ACCEPTED' && _rideStatus != 'IN_PROGRESS') {
       _cancelRide();
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('No response from driver. Please try again.'),
