@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class LiveMap extends StatelessWidget {
+class LiveMap extends StatefulWidget {
   final LatLng myLocation;
   final LatLng? customPickupLocation;
   final LatLng? dropoffLocation;
   final LatLng? driverLocation;
+  final double driverHeading;
   final List<LatLng> polylinePoints;
   final void Function(GoogleMapController) onMapCreated;
   final void Function(LatLng) onTap;
@@ -16,17 +17,39 @@ class LiveMap extends StatelessWidget {
     this.customPickupLocation,
     this.dropoffLocation,
     this.driverLocation,
+    this.driverHeading = 0,
     this.polylinePoints = const [],
     required this.onMapCreated,
     required this.onTap,
   });
 
   @override
+  State<LiveMap> createState() => _LiveMapState();
+}
+
+class _LiveMapState extends State<LiveMap> {
+  BitmapDescriptor? _carIcon;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCarIcon();
+  }
+
+  Future<void> _loadCarIcon() async {
+    _carIcon = await BitmapDescriptor.asset(
+      const ImageConfiguration(size: Size(64, 64)),
+      "assets/images/map_marker.png",
+    );
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     Set<Marker> markers = {};
 
     // 1. Pickup Marker (Green)
-    LatLng activePickup = customPickupLocation ?? myLocation;
+    LatLng activePickup = widget.customPickupLocation ?? widget.myLocation;
     markers.add(
       Marker(
         markerId: const MarkerId('pickup'),
@@ -36,34 +59,37 @@ class LiveMap extends StatelessWidget {
     );
 
     // 2. Dropoff Marker (Red)
-    if (dropoffLocation != null) {
+    if (widget.dropoffLocation != null) {
       markers.add(
         Marker(
           markerId: const MarkerId('dropoff'),
-          position: dropoffLocation!,
+          position: widget.dropoffLocation!,
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
         ),
       );
     }
 
     // 3. Driver Marker (Orange)
-    if (driverLocation != null) {
+    if (widget.driverLocation != null) {
       markers.add(
         Marker(
           markerId: const MarkerId('driver'),
-          position: driverLocation!,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          position: widget.driverLocation!,
+          icon: _carIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          rotation: widget.driverHeading,
+          anchor: const Offset(0.5, 0.5),
+          flat: true,
         ),
       );
     }
 
     // 4. Route Polyline
     Set<Polyline> polylines = {};
-    if (polylinePoints.isNotEmpty) {
+    if (widget.polylinePoints.isNotEmpty) {
       polylines.add(
         Polyline(
           polylineId: const PolylineId('route'),
-          points: polylinePoints,
+          points: widget.polylinePoints,
           color: const Color(0xFFE9692C),
           width: 5,
         ),
@@ -71,15 +97,15 @@ class LiveMap extends StatelessWidget {
     }
 
     return GoogleMap(
-      onMapCreated: onMapCreated,
+      onMapCreated: widget.onMapCreated,
       initialCameraPosition: CameraPosition(
-        target: myLocation,
+        target: widget.myLocation,
         zoom: 14.0,
       ),
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
       zoomControlsEnabled: false,
-      onTap: onTap,
+      onTap: widget.onTap,
       markers: markers,
       polylines: polylines,
     );

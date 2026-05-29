@@ -33,37 +33,51 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Spacer(),
-          Image.asset('assets/images/flising_new_logo.jpg', width: MediaQuery.of(context).size.width * 0.6),
-          const SizedBox(height: 8),
-          const SizedBox(height: 8),
-          const Text('PASSENGER',
-              style: TextStyle(
+      body: SafeArea(
+        child: SizedBox(
+          width: double.infinity,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Spacer(),
+              Image.asset(
+                'assets/images/flising_new_logo.jpg',
+                width: MediaQuery.of(context).size.width * 0.6,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'PASSENGER',
+                style: TextStyle(
                   color: Color(0xFFE9692C),
                   fontSize: 36,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 8)),
-          const SizedBox(height: 48),
-          AnimatedBuilder(
-            animation: _controller,
-            builder: (_, __) => CustomPaint(
-              size: const Size(180, 180),
-              painter: _RingPainter(_controller.value),
-            ),
-          ),
-          const Spacer(),
-          const Padding(
-            padding: EdgeInsets.only(bottom: 32),
-            child: Text('FROM VANIMO TO THE WORLD',
-                style: TextStyle(
+                  letterSpacing: 8,
+                ),
+              ),
+              const SizedBox(height: 48),
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (_, __) => CustomPaint(
+                  size: const Size(180, 180),
+                  painter: _RingPainter(_controller.value),
+                ),
+              ),
+              const Spacer(),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 32),
+                child: Text(
+                  'FROM VANIMO TO THE WORLD',
+                  style: TextStyle(
                     color: Colors.white54,
                     fontSize: 13,
-                    letterSpacing: 2)),
+                    letterSpacing: 2,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -78,7 +92,6 @@ class _RingPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 10;
 
-    // Orange glow ring
     final glowPaint = Paint()
       ..color = const Color(0xFFE9692C).withOpacity(0.3)
       ..style = PaintingStyle.stroke
@@ -86,14 +99,12 @@ class _RingPainter extends CustomPainter {
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
     canvas.drawCircle(center, radius, glowPaint);
 
-    // Orange solid ring
     final orangePaint = Paint()
       ..color = const Color(0xFFE9692C)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 4;
     canvas.drawCircle(center, radius, orangePaint);
 
-    // White spinning arc
     final arcPaint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
@@ -107,16 +118,13 @@ class _RingPainter extends CustomPainter {
       arcPaint,
     );
 
-    // Navigation arrow dot
     final dotAngle = 2 * pi * 0.85 - pi / 2;
     final dotPos = Offset(
       center.dx + radius * cos(dotAngle),
       center.dy + radius * sin(dotAngle),
     );
-    final dotPaint = Paint()..color = const Color(0xFFE9692C);
-    canvas.drawCircle(dotPos, 8, dotPaint);
-    final iconPaint = Paint()..color = Colors.white;
-    canvas.drawCircle(dotPos, 4, iconPaint);
+    canvas.drawCircle(dotPos, 8, Paint()..color = const Color(0xFFE9692C));
+    canvas.drawCircle(dotPos, 4, Paint()..color = Colors.white);
   }
 
   @override

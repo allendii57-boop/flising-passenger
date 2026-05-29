@@ -66,8 +66,19 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
       ).ref('users/passengers/${refreshed.uid}');
 
       try {
-        final snap = await dbRef.get().timeout(const Duration(seconds: 10));
+        final snap = await dbRef.get().timeout(const Duration(seconds: 30));
         if (!snap.exists) {
+          // Reject drivers trying to log into passenger app
+          final driverSnap = await FirebaseDatabase.instanceFor(
+            app: Firebase.app(),
+            databaseURL: "https://flising-default-rtdb.asia-southeast1.firebasedatabase.app",
+          ).ref("drivers/${refreshed.uid}/profile").get().timeout(const Duration(seconds: 30));
+          if (driverSnap.exists) {
+            await FirebaseAuth.instance.signOut();
+            if (!mounted) return;
+            _showSnack("This account is registered as a driver. Please use the Flising Driver app.", isError: true);
+            return;
+          }
           // First verified login — write profile for the first time
           await dbRef.set({
             'fullName': refreshed.displayName ?? '',
@@ -75,7 +86,7 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
             'role': 'passenger',
             'isVerified': true,
             'registeredAt': ServerValue.timestamp,
-          }).timeout(const Duration(seconds: 10));
+          }).timeout(const Duration(seconds: 30));
         }
       } catch (e) {
         // DB write failed — allow login, retries next time

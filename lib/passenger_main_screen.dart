@@ -45,6 +45,7 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   List<LatLng> _routePoints = [];
   String? _assignedDriverId;
   LatLng? _driverLocation;
+  double _driverHeading = 0;
   bool _showCancelButton = false;
   int _cancelSecondsLeft = 120;
   bool _showCompletionPopup = false;
@@ -457,6 +458,7 @@ void _calculateFareStraightLine() {
         if (data['latitude'] != null && data['longitude'] != null) {
           setState(() {
             _driverLocation = LatLng(data['latitude'], data['longitude']);
+              _driverHeading = (data['heading'] as num?)?.toDouble() ?? _driverHeading;
           });
         }
       }
@@ -506,6 +508,7 @@ void _calculateFareStraightLine() {
                 customPickupLocation: _customPickupLocation,
                 dropoffLocation: _dropoffLocation,
                 driverLocation: _driverLocation,
+                driverHeading: _driverHeading,
                 polylinePoints: _routePoints,
               onMapCreated: (controller) => mapController = controller,
                 onTap: _handleMapTap,
