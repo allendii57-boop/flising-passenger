@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-$1
+import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
