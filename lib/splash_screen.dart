@@ -19,18 +19,21 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
-    Future.delayed(const Duration(seconds: 4), () async {
+    Future.delayed(const Duration(seconds: 3), () async {
       if (!mounted) return;
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await user.reload();
-        if (!mounted) return;
-        if (FirebaseAuth.instance.currentUser?.emailVerified ?? false) {
-          Navigator.pushReplacementNamed(context, '/passenger_main');
-          return;
+      String target = '/login';
+      try {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          await user.reload();
+          if (FirebaseAuth.instance.currentUser?.emailVerified ?? false) {
+            target = '/passenger_main';
+          }
         }
+      } catch (_) {
+        target = '/login';
       }
-      Navigator.pushReplacementNamed(context, '/login');
+      if (mounted) Navigator.pushReplacementNamed(context, target);
     });
   }
 
