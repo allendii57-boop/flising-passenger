@@ -94,7 +94,7 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
       }
 
       if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/splash');
+      Navigator.pushReplacementNamed(context, '/passenger_main');
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       String msg;

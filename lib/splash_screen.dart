@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+$1
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,8 +19,18 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(seconds: 2),
     )..repeat();
-    Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) Navigator.pushReplacementNamed(context, '/login');
+    Future.delayed(const Duration(seconds: 4), () async {
+      if (!mounted) return;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await user.reload();
+        if (!mounted) return;
+        if (FirebaseAuth.instance.currentUser?.emailVerified ?? false) {
+          Navigator.pushReplacementNamed(context, '/passenger_main');
+          return;
+        }
+      }
+      Navigator.pushReplacementNamed(context, '/login');
     });
   }
 

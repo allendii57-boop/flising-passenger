@@ -21,6 +21,9 @@ jobs:
         with:
           flutter-version: '3.32.0'
       - run: flutter pub get
+
+      - run: dart run flutter_launcher_icons
+
       - run: flutter build apk --release --split-per-abi
       - uses: softprops/action-gh-release@v1
         with:
