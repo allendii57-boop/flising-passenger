@@ -613,12 +613,7 @@ if (_dropoffLocation != null)
   ),
                           ElevatedButton(
                             onPressed: () {
-                              if (!_isVerified) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                  content: const Text('Please go to profile to complete verification'),
-                                  backgroundColor: flisingOrange,
-                                ));
-                              } else if (_dropoffLocation != null) {
+                              if (_dropoffLocation != null) {
                                 _showPaymentSelection();
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -628,7 +623,7 @@ if (_dropoffLocation != null)
                               }
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: _isVerified ? flisingOrange : Colors.grey[850],
+                              backgroundColor: flisingOrange,
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),

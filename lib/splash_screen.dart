@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen>
       try {
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
-          await user.reload();
+          await user.reload().timeout(const Duration(seconds: 4));
           if (FirebaseAuth.instance.currentUser?.emailVerified ?? false) {
             target = '/passenger_main';
           }
