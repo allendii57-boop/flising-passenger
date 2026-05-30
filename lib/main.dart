@@ -11,17 +11,21 @@ import 'passenger_main_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    debugPrint('Firebase init error: $e');
+  }
 
-  FirebaseMessaging.onBackgroundMessage(
-    firebaseMessagingBackgroundHandler
-  );
-
-  await NotificationService.initialize();
-
+  // Start the app immediately; notifications init in background (non-blocking)
   runApp(const FlisingPassengerApp());
+
+  NotificationService.initialize().catchError((e) {
+    debugPrint('Notification init error: $e');
+  });
 }
 
 class FlisingPassengerApp extends StatelessWidget {
