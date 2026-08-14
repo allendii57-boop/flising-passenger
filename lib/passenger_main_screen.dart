@@ -36,6 +36,7 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   String _estimatedETA = "";
   double _calculatedFareAmount = 0.0;
   
+  String _vehicleType = 'car'; // 'car' or 'motorcycle'
   String _rideStatus = 'IDLE';
   String? _currentRideId;
   StreamSubscription<DatabaseEvent>? _ticketListener;
@@ -170,7 +171,8 @@ _locationStream = Geolocator.getPositionStream(
     if (data['status'] == 'OK') {
       final meters = data['routes'][0]['legs'][0]['distance']['value'];
       final distanceInKm = meters / 1000.0;
-      final rawFare = 7.00 + (distanceInKm * 5.00);
+      final perKm = _vehicleType == 'motorcycle' ? 3.00 : 4.00;
+      final rawFare = 7.00 + (distanceInKm * perKm);
       final finalFare = rawFare.ceilToDouble();
       if (mounted) setState(() {
         _calculatedFareAmount = finalFare;
@@ -210,14 +212,48 @@ void _calculateFareStraightLine() {
   final distanceInMeters = Geolocator.distanceBetween(
     activePickup.latitude, activePickup.longitude,
     _dropoffLocation!.latitude, _dropoffLocation!.longitude);
-  final distanceInKm = distanceInMeters / 1000;
-  final rawFare = 7.00 + (distanceInKm * 5.00);
+  final distanceInKm = (distanceInMeters / 1000) * 1.3; // approx road distance
+  final perKm = _vehicleType == 'motorcycle' ? 3.00 : 4.00;
+  final rawFare = 7.00 + (distanceInKm * perKm);
   final finalFare = rawFare.ceilToDouble();
   if (mounted) setState(() {
     _calculatedFareAmount = finalFare;
     _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
   });
 }
+
+  Widget _vehicleOption(String type, IconData icon, String label, String rate) {
+    final bool selected = _vehicleType == type;
+    return GestureDetector(
+      onTap: () {
+        if (_vehicleType == type) return;
+        setState(() => _vehicleType = type);
+        _calculateFare();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? flisingOrange.withOpacity(0.18) : Colors.black,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? flisingOrange : Colors.white24,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: selected ? flisingOrange : Colors.white54, size: 24),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(
+              color: selected ? Colors.white : Colors.white54,
+              fontSize: 13, fontWeight: FontWeight.w600)),
+            Text(rate, style: TextStyle(
+              color: selected ? flisingOrange : Colors.white38, fontSize: 11)),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _handleMapTap(LatLng point) {
     if (_rideStatus != 'IDLE' || _showCompletionPopup) return;
@@ -340,6 +376,15 @@ void _calculateFareStraightLine() {
       if (driverData is! Map) return;
       final isOnline = driverData['isOnline'] as bool? ?? false;
       if (!isOnline) return;
+      // Only match drivers with the requested vehicle type (legacy drivers = car)
+      final dProfile = driverData['profile'];
+      String dType = 'car';
+      if (dProfile is Map && dProfile['vehicleType'] != null) {
+        dType = dProfile['vehicleType'].toString();
+      } else if (driverData['vehicleType'] != null) {
+        dType = driverData['vehicleType'].toString();
+      }
+      if (dType != _vehicleType) return;
       final lat = (driverData['latitude'] as num?)?.toDouble();
       final lng = (driverData['longitude'] as num?)?.toDouble();
       if (lat == null || lng == null) return;
@@ -379,6 +424,7 @@ void _calculateFareStraightLine() {
     'pickupLng': (_customPickupLocation ?? _myLocation).longitude,
     'dropoffLat': _dropoffLocation!.latitude,
     'dropoffLng': _dropoffLocation!.longitude,
+    'vehicleType': _vehicleType,
     'status': 'PENDING',
     'timestamp': ServerValue.timestamp,
   });
@@ -608,6 +654,16 @@ if (_dropoffLocation != null)
         Text(_estimatedFare, style: TextStyle(color: flisingOrange, fontSize: 18, fontWeight: FontWeight.bold)),
         if (_estimatedETA.isNotEmpty)
           Text('~$_estimatedETA', style: const TextStyle(color: Colors.white54, fontSize: 13)),
+      ],
+    ),
+  ),
+  Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    child: Row(
+      children: [
+        Expanded(child: _vehicleOption('car', Icons.directions_car, 'Car', 'K4/km')),
+        const SizedBox(width: 10),
+        Expanded(child: _vehicleOption('motorcycle', Icons.two_wheeler, 'Motorcycle', 'K3/km')),
       ],
     ),
   ),
