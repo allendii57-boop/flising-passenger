@@ -273,7 +273,6 @@ void _calculateFareStraightLine() {
       context: context,
       isScrollControlled: true,
       backgroundColor: darkSurface,
-      isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => DraggableScrollableSheet(
         initialChildSize: 0.6,
