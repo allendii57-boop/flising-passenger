@@ -7,3 +7,4 @@ lib/agora_config.dart
 android/.gradle/
 android/app/build/
 build/
+android/local.properties
