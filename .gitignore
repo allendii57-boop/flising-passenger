@@ -1,2 +1,9 @@
 #6daae433e6d24fc6b217fffc30321ac8
 lib/agora_config.dart
+
+# Build artifacts (never commit)
+.dart_tool/
+.flutter-plugins-dependencies
+android/.gradle/
+android/app/build/
+build/

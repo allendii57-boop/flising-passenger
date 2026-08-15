@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.flisingpassenger.app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "28.2.13676358"
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.flisingpassenger.app"
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -31,17 +31,10 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
-
-    configurations.all {
-        resolutionStrategy {
-            force("androidx.core:core:1.15.0")
-            force("androidx.core:core-ktx:1.15.0")
-            force("androidx.activity:activity:1.9.0")
-            force("androidx.browser:browser:1.8.0")
-        }
-    }
 }
 
 flutter {
     source = "../.."
 }
+
+
