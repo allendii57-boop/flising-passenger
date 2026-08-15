@@ -8,3 +8,6 @@ android/.gradle/
 android/app/build/
 build/
 android/local.properties
+android/build/
+android/.gradle/
+android/local.properties
