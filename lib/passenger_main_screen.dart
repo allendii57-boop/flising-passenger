@@ -271,6 +271,7 @@ void _calculateFareStraightLine() {
   void _showLocationSearchSheet(bool isPickup) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: darkSurface,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
@@ -322,10 +323,14 @@ void _calculateFareStraightLine() {
   void _showPaymentSelection() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: darkSurface,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (bc) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 20.0),
+        padding: EdgeInsets.only(
+          top: 24.0, left: 20.0, right: 20.0,
+          bottom: 24.0 + MediaQuery.of(bc).padding.bottom,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

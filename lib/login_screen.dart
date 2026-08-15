@@ -239,7 +239,7 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your ride, your way.',
+                  'We are one tap away.',
                   style: TextStyle(color: flisingOrange, fontSize: 14),
                   textAlign: TextAlign.center,
                 ),
