@@ -220,7 +220,7 @@ class _PassengerLoginScreenState extends State<PassengerLoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Image.asset(
-                  'assets/images/flising_new_logo.jpg',
+                  'assets/images/flising_mark.png',
                   height: 80,
                   fit: BoxFit.contain,
                   errorBuilder: (_, __, ___) =>

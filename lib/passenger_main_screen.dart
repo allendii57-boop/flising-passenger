@@ -171,7 +171,7 @@ _locationStream = Geolocator.getPositionStream(
     if (data['status'] == 'OK') {
       final meters = data['routes'][0]['legs'][0]['distance']['value'];
       final distanceInKm = meters / 1000.0;
-      final perKm = _vehicleType == 'motorcycle' ? 3.00 : 4.00;
+      final perKm = _vehicleType == 'motorcycle' ? 2.00 : 3.00;
       final rawFare = 7.00 + (distanceInKm * perKm);
       final finalFare = rawFare.ceilToDouble();
       if (mounted) setState(() {
@@ -213,7 +213,7 @@ void _calculateFareStraightLine() {
     activePickup.latitude, activePickup.longitude,
     _dropoffLocation!.latitude, _dropoffLocation!.longitude);
   final distanceInKm = (distanceInMeters / 1000) * 1.3; // approx road distance
-  final perKm = _vehicleType == 'motorcycle' ? 3.00 : 4.00;
+  final perKm = _vehicleType == 'motorcycle' ? 2.00 : 3.00;
   final rawFare = 7.00 + (distanceInKm * perKm);
   final finalFare = rawFare.ceilToDouble();
   if (mounted) setState(() {
@@ -247,8 +247,6 @@ void _calculateFareStraightLine() {
             Text(label, style: TextStyle(
               color: selected ? Colors.white : Colors.white54,
               fontSize: 13, fontWeight: FontWeight.w600)),
-            Text(rate, style: TextStyle(
-              color: selected ? flisingOrange : Colors.white38, fontSize: 11)),
           ],
         ),
       ),
