@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 @pragma('vm:entry-point')
@@ -42,7 +43,7 @@ class NotificationService {
     final token = await _fcm.getToken();
     if (token == null) return;
 
-    await FirebaseDatabase.instance
+    await FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app')
         .ref('passengers/${user.uid}/fcmToken')
         .set(token);
   }

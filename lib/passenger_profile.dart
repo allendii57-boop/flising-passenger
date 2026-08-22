@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -55,7 +56,7 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
       });
     }
     try {
-      DatabaseReference userRef = FirebaseDatabase.instance
+      DatabaseReference userRef = FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app')
           .ref()
           .child('users/passengers/${_currentUser!.uid}');
       userRef.onValue.listen((event) {
@@ -98,7 +99,7 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
       await ref.putFile(File(picked.path));
       final url = await ref.getDownloadURL();
 
-      await FirebaseDatabase.instance
+      await FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app')
           .ref('users/passengers/$uid')
           .update({'profileImageUrl': url});
 

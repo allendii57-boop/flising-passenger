@@ -44,6 +44,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '305111246630',
     projectId: 'flising',
     storageBucket: 'flising.firebasestorage.app',
-databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebaseapp.com',
+databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
 );
 }

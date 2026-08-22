@@ -486,8 +486,8 @@ void _calculateFareStraightLine() {
 
   void _startTrackingDriver() {
     if (_assignedDriverId == null) return;
-    DatabaseReference driverRef = FirebaseDatabase.instance.ref('drivers/$_assignedDriverId');
-      FirebaseDatabase.instance
+    DatabaseReference driverRef = FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app').ref('drivers/$_assignedDriverId');
+      FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app')
     .ref('drivers/$_assignedDriverId/profile')
     .once()
     .then((snap) {
@@ -521,7 +521,7 @@ void _calculateFareStraightLine() {
   void _cancelRide() {
     setState(() { _rideStatus = 'IDLE'; _showCancelButton = false; _cancelSecondsLeft = 120; });
     if (_currentRideId != null) {
-      FirebaseDatabase.instance.ref('rides/$_currentRideId').update({'status': 'CANCELLED_BY_PASSENGER'});
+      FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app').ref('rides/$_currentRideId').update({'status': 'CANCELLED_BY_PASSENGER'});
       _currentRideId = null;
     }
     _stopTrackingDriver();
@@ -530,7 +530,7 @@ void _calculateFareStraightLine() {
 
   void _submitRating() async {
     if (_lastCompletedRideId != null && _givenRating > 0) {
-      DatabaseReference rideRef = FirebaseDatabase.instance.ref('rides/$_lastCompletedRideId');
+      DatabaseReference rideRef = FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app').ref('rides/$_lastCompletedRideId');
       await rideRef.update({'rating': _givenRating});
     }
     setState(() {
