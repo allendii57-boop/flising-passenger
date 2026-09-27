@@ -14,6 +14,7 @@ import 'route_service.dart';
 import 'passenger_history.dart';
 import 'passenger_profile.dart';
 import 'quick_places_list.dart'; 
+import 'call_screen.dart';
 
 class PassengerMainScreen extends StatefulWidget {
   const PassengerMainScreen({super.key});
@@ -40,6 +41,8 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   String _rideStatus = 'IDLE';
   String? _currentRideId;
   StreamSubscription<DatabaseEvent>? _ticketListener;
+  StreamSubscription<DatabaseEvent>? _incomingCallListener;
+  bool _callScreenOpen = false;
   StreamSubscription<DatabaseEvent>? _driverLocationListener;
   StreamSubscription<Position>? _locationStream;
   
@@ -75,7 +78,35 @@ String? _driverPhoto;
   }
 
   @override
+  void _watchIncomingCall(String rideId) {
+    _incomingCallListener?.cancel();
+    _incomingCallListener = FirebaseDatabase.instanceFor(
+      app: Firebase.app(),
+      databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+    ).ref('rides/$rideId/call').onValue.listen((event) {
+      if (!event.snapshot.exists || !mounted || _callScreenOpen) return;
+      final data = event.snapshot.value as Map<dynamic, dynamic>;
+      if (data['status'] != 'CALLING') return;
+      if (data['callerType'] != 'driver') return;
+      _callScreenOpen = true;
+      Navigator.push(context, MaterialPageRoute(
+        builder: (_) => CallScreen(
+          rideId: rideId,
+          callerType: 'passenger',
+          otherPersonName: _driverName ?? 'Driver',
+          otherPersonPhoto: _driverPhoto,
+        ),
+      )).then((_) => _callScreenOpen = false);
+    });
+  }
+
+  void _stopWatchingIncomingCall() {
+    _incomingCallListener?.cancel();
+    _incomingCallListener = null;
+  }
+
   void dispose() {
+    _incomingCallListener?.cancel();
     _ticketListener?.cancel();
     _driverLocationListener?.cancel();
     super.dispose();
@@ -413,7 +444,7 @@ void _calculateFareStraightLine() {
   // Create ride with real driver UID
   final ridesRef = db.ref('rides');
   String newRideId = ridesRef.push().key!;
-  _currentRideId = newRideId;
+  _currentRideId = newRideId; _watchIncomingCall(newRideId);
 
   await db.ref('rides/$newRideId').set({
     'passengerId': currentUser?.uid ?? 'unknown_passenger',
@@ -453,7 +484,7 @@ void _calculateFareStraightLine() {
         setState(() {
           _lastCompletedRideId = _currentRideId;
           _rideStatus = 'IDLE';
-          _currentRideId = null;
+          _currentRideId = null; _stopWatchingIncomingCall();
           _showCompletionPopup = true;
         });
         _ticketListener?.cancel();
@@ -522,7 +553,7 @@ void _calculateFareStraightLine() {
     setState(() { _rideStatus = 'IDLE'; _showCancelButton = false; _cancelSecondsLeft = 120; });
     if (_currentRideId != null) {
       FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app').ref('rides/$_currentRideId').update({'status': 'CANCELLED_BY_PASSENGER'});
-      _currentRideId = null;
+      _currentRideId = null; _stopWatchingIncomingCall();
     }
     _stopTrackingDriver();
     _ticketListener?.cancel();
@@ -723,8 +754,18 @@ if (_dropoffLocation != null)
    Text(_driverName ?? 'Driver'),
                               IconButton(
                                 icon: const Icon(Icons.phone_in_talk, color: Colors.greenAccent),
- onPressed: () => launchUrl(
-    Uri(scheme: 'tel', path: _driverPhone ?? '')),
+ onPressed: () {
+                                  if (_currentRideId == null) return;
+                                  _callScreenOpen = true;
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (_) => CallScreen(
+                                      rideId: _currentRideId!,
+                                      callerType: 'passenger',
+                                      otherPersonName: _driverName ?? 'Driver',
+                                      otherPersonPhoto: _driverPhoto,
+                                    ),
+                                  )).then((_) => _callScreenOpen = false);
+                                },
                               ),
                             ],
                           ),
