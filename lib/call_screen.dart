@@ -47,6 +47,7 @@ class CallScreen extends StatefulWidget {
 
 class _CallScreenState extends State<CallScreen> {
   RtcEngine? _engine;
+  String _step = 'start';
 
   bool _isMuted = false;
   bool _isSpeakerOn = true;
@@ -124,14 +125,14 @@ class _CallScreenState extends State<CallScreen> {
   Future<void> _setupAgora() async {
     try {
       _engine = createAgoraRtcEngine();
-      await _engine!.initialize(RtcEngineContext(appId: agoraAppId));
+      _step = 'initialize'; await _engine!.initialize(RtcEngineContext(appId: agoraAppId));
 
       // Voice call only
-      await _engine!.setChannelProfile(
+      _step = 'setChannelProfile'; await _engine!.setChannelProfile(
           ChannelProfileType.channelProfileCommunication);
-      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-      await _engine!.enableAudio();
-      await _engine!.setEnableSpeakerphone(_isSpeakerOn);
+      _step = 'setClientRole'; await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+      _step = 'enableAudio'; await _engine!.enableAudio();
+      _step = 'setDefaultAudioRouteToSpeakerphone'; await _engine!.setDefaultAudioRouteToSpeakerphone(_isSpeakerOn);
 
       // Event handlers
       _engine!.registerEventHandler(RtcEngineEventHandler(
@@ -168,7 +169,7 @@ class _CallScreenState extends State<CallScreen> {
       ));
 
       // Join channel — rideId is the channel name
-      await _engine!.joinChannel(
+      _step = 'joinChannel'; await _engine!.joinChannel(
         token: '',
         channelId: widget.rideId,
         uid: 0,
@@ -182,7 +183,7 @@ class _CallScreenState extends State<CallScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to start call: $e'),
+            content: Text('Failed at $_step: $e'),
             backgroundColor: Colors.red,
           ),
         );
