@@ -92,6 +92,7 @@ String? _driverPhoto;
       Navigator.push(context, MaterialPageRoute(
         builder: (_) => CallScreen(
           rideId: rideId,
+          isIncoming: true,
           callerType: 'passenger',
           otherPersonName: _driverName ?? 'Driver',
           otherPersonPhoto: _driverPhoto,

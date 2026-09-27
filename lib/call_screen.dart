@@ -30,6 +30,7 @@ class CallScreen extends StatefulWidget {
   final String callerType; // 'passenger' or 'driver'
   final String otherPersonName;
   final String? otherPersonPhoto;
+  final bool isIncoming;
 
   const CallScreen({
     super.key,
@@ -37,6 +38,7 @@ class CallScreen extends StatefulWidget {
     required this.callerType,
     required this.otherPersonName,
     this.otherPersonPhoto,
+    this.isIncoming = false,
   });
 
   @override
@@ -95,7 +97,9 @@ class _CallScreenState extends State<CallScreen> {
     }
 
     // 2. Signal the call via Firebase
-    await _callRef.set({
+    if (widget.isIncoming) {
+      await _callRef.update({'status': 'ANSWERED'});
+    } else await _callRef.set({
       'status': 'CALLING',
       'callerType': widget.callerType,
       'channel': widget.rideId,
