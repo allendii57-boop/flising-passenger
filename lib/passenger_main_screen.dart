@@ -554,6 +554,13 @@ void _calculateFareStraightLine() {
               LiveMap(
                 myLocation: _myLocation,
                 customPickupLocation: _customPickupLocation,
+                onPickupDragged: (newPos) {
+                  setState(() {
+                    _customPickupLocation = newPos;
+                    _pickupText = 'Adjusted Pickup';
+                  });
+                  _calculateFare();
+                },
                 dropoffLocation: _dropoffLocation,
                 driverLocation: _driverLocation,
                 driverHeading: _driverHeading,

@@ -10,6 +10,7 @@ class LiveMap extends StatefulWidget {
   final List<LatLng> polylinePoints;
   final void Function(GoogleMapController) onMapCreated;
   final void Function(LatLng) onTap;
+  final void Function(LatLng)? onPickupDragged;
 
   const LiveMap({
     super.key,
@@ -21,6 +22,7 @@ class LiveMap extends StatefulWidget {
     this.polylinePoints = const [],
     required this.onMapCreated,
     required this.onTap,
+    this.onPickupDragged,
   });
 
   @override
@@ -55,6 +57,9 @@ class _LiveMapState extends State<LiveMap> {
         markerId: const MarkerId('pickup'),
         position: activePickup,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        draggable: widget.onPickupDragged != null,
+        onDragEnd: (newPos) => widget.onPickupDragged?.call(newPos),
+        infoWindow: const InfoWindow(title: 'Pickup', snippet: 'Hold and drag to adjust'),
       ),
     );
 
