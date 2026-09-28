@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'service_areas.dart';
 
 class LiveMap extends StatefulWidget {
   final LatLng myLocation;
@@ -110,6 +111,8 @@ class _LiveMapState extends State<LiveMap> {
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
       zoomControlsEnabled: false,
+      cameraTargetBounds: CameraTargetBounds(currentServiceArea.bounds),
+      minMaxZoomPreference: const MinMaxZoomPreference(11, 20),
       onTap: widget.onTap,
       markers: markers,
       polylines: polylines,

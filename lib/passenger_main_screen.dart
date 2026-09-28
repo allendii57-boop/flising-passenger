@@ -15,6 +15,7 @@ import 'passenger_history.dart';
 import 'passenger_profile.dart';
 import 'quick_places_list.dart'; 
 import 'call_screen.dart';
+import 'service_areas.dart';
 
 class PassengerMainScreen extends StatefulWidget {
   const PassengerMainScreen({super.key});
@@ -285,8 +286,18 @@ void _calculateFareStraightLine() {
     );
   }
 
+  bool _inArea(LatLng? p, [String what = 'That location']) {
+    if (p == null || currentServiceArea.contains(p)) return true;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('$what is outside the ${currentServiceArea.name} service area'),
+      backgroundColor: Colors.red,
+    ));
+    return false;
+  }
+
   void _handleMapTap(LatLng point) {
     if (_rideStatus != 'IDLE' || _showCompletionPopup) return;
+    if (!_inArea(point, _isSettingPickup ? 'Pickup' : 'Dropoff')) return;
     setState(() {
       if (_isSettingPickup) {
         _customPickupLocation = point;
@@ -331,11 +342,11 @@ void _calculateFareStraightLine() {
                       setState(() {
                         LatLng newPoint = LatLng(place['lat'] as double, place['lng'] as double);
                         if (isPickup) {
-                          _customPickupLocation = newPoint;
-                          _pickupText = place['name'] as String;
+                          if (_inArea(newPoint, 'Pickup')) { _customPickupLocation = newPoint;
+                          _pickupText = place['name'] as String; }
                         } else {
-                          _dropoffLocation = newPoint;
-                          _dropoffText = place['name'] as String;
+                          if (_inArea(newPoint, 'Dropoff')) { _dropoffLocation = newPoint;
+                          _dropoffText = place['name'] as String; }
                         }
                       });
                       _calculateFare();
@@ -390,6 +401,7 @@ void _calculateFareStraightLine() {
 
   // 4. THE HANDSHAKE ENGINE (FIREBASE)
   void _findClosestDriver() async {
+    if (!_inArea(_customPickupLocation ?? _myLocation, 'Pickup') || !_inArea(_dropoffLocation, 'Dropoff')) return;
   setState(() { _rideStatus = 'SEARCHING'; });
   _locationStream?.cancel();
 
@@ -588,8 +600,8 @@ void _calculateFareStraightLine() {
                 customPickupLocation: _customPickupLocation,
                 onPickupDragged: (newPos) {
                   setState(() {
-                    _customPickupLocation = newPos;
-                    _pickupText = 'Adjusted Pickup';
+                    if (_inArea(newPos, 'Pickup')) { _customPickupLocation = newPos;
+                    _pickupText = 'Adjusted Pickup'; }
                   });
                   _calculateFare();
                 },
