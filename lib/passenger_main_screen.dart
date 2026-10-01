@@ -85,6 +85,7 @@ String? _driverPhoto;
   @override
   void initState() {
     super.initState();
+    _restoreActiveRide();
     _goToMyLocation();
     _checkVerificationStatus(); 
   }
@@ -544,7 +545,33 @@ void _calculateFareStraightLine() {
     'timestamp': ServerValue.timestamp,
   });
 
-  _ticketListener = db.ref('rides/$newRideId').onValue.listen((event) {
+  _listenToRide(newRideId);
+
+  Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) { timer.cancel(); return; }
+      if (_cancelSecondsLeft > 0) {
+        setState(() => _cancelSecondsLeft--);
+      } else {
+        timer.cancel();
+        if (mounted) setState(() { _showCancelButton = false; _cancelSecondsLeft = 120; });
+      }
+    });
+    Future.delayed(const Duration(seconds: 30), () {
+    if (mounted && _rideStatus != 'ACCEPTED' && _rideStatus != 'IN_PROGRESS') {
+      _cancelRide();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('No response from driver. Please try again.'),
+        backgroundColor: Colors.red,
+        duration: Duration(seconds: 5),
+      ));
+    }
+  });
+  }
+  
+
+  void _listenToRide(String rideId) {
+    _ticketListener?.cancel();
+    _ticketListener = FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app').ref('rides/$rideId').onValue.listen((event) {
     if (event.snapshot.exists) {
       final rideData = event.snapshot.value as Map<dynamic, dynamic>;
       String currentStatus = rideData['status'];
@@ -574,28 +601,44 @@ void _calculateFareStraightLine() {
       }
     }
   });
-
-  Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) { timer.cancel(); return; }
-      if (_cancelSecondsLeft > 0) {
-        setState(() => _cancelSecondsLeft--);
-      } else {
-        timer.cancel();
-        if (mounted) setState(() { _showCancelButton = false; _cancelSecondsLeft = 120; });
-      }
-    });
-    Future.delayed(const Duration(seconds: 30), () {
-    if (mounted && _rideStatus != 'ACCEPTED' && _rideStatus != 'IN_PROGRESS') {
-      _cancelRide();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('No response from driver. Please try again.'),
-        backgroundColor: Colors.red,
-        duration: Duration(seconds: 5),
-      ));
-    }
-  });
   }
-  
+
+  Future<void> _restoreActiveRide() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final db = FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app');
+    final snap = await db.ref('rides').orderByChild('passengerId').equalTo(uid).limitToLast(5).get();
+    if (!mounted || snap.value == null) return;
+    final rides = snap.value as Map<dynamic, dynamic>;
+    for (final entry in rides.entries) {
+      final r = entry.value;
+      if (r is! Map) continue;
+      final id = entry.key.toString();
+      if (r['status'] == 'PENDING') {
+        db.ref('rides/$id').update({'status': 'CANCELLED_BY_PASSENGER'});
+        continue;
+      }
+      if (r['status'] != 'ACCEPTED' && r['status'] != 'IN_PROGRESS') continue;
+      setState(() {
+        _currentRideId = id;
+        _assignedDriverId = r['assignedDriverId']?.toString();
+        _rideStatus = r['status'].toString();
+        _showCancelButton = r['status'] == 'ACCEPTED';
+        _deliveryPin = (r['deliveryPin'] ?? '').toString();
+        _isSendMode = r['type'] == 'delivery';
+        if (r['recipientPhone'] != null) _recipientPhoneCtrl.text = r['recipientPhone'].toString();
+        if (r['dropoffLat'] != null && r['dropoffLng'] != null) {
+          _dropoffLocation = LatLng((r['dropoffLat'] as num).toDouble(), (r['dropoffLng'] as num).toDouble());
+          _dropoffText = (r['dropoffText'] ?? _dropoffText).toString();
+        }
+        _pickupText = (r['pickupText'] ?? _pickupText).toString();
+      });
+      _watchIncomingCall(id);
+      _startTrackingDriver();
+      _listenToRide(id);
+      break;
+    }
+  }
 
   void _startTrackingDriver() {
     if (_assignedDriverId == null) return;
@@ -650,7 +693,7 @@ void _calculateFareStraightLine() {
       _showCompletionPopup = false;
       _dropoffLocation = null;
       _estimatedFare = "K 0.00";
-      _dropoffText = "Tap map to set dropoff...";
+      _dropoffText = "Tap map to set dropoff..."; _isSendMode = false; _recipientNameCtrl.clear(); _recipientPhoneCtrl.clear(); _parcelNoteCtrl.clear();
     });
   }
 

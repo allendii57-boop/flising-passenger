@@ -25,6 +25,13 @@ import 'dart:async';
 //   ),
 // ─────────────────────────────────────────────────────────────────────────────
 
+Future<void>? _agoraShutdown;
+
+Future<void> _shutdownEngine(RtcEngine eng) async {
+  try { await eng.leaveChannel(); } catch (_) {}
+  try { await eng.release(); } catch (_) {}
+}
+
 class CallScreen extends StatefulWidget {
   final String rideId;
   final String callerType; // 'passenger' or 'driver'
@@ -75,8 +82,8 @@ class _CallScreenState extends State<CallScreen> {
   void dispose() {
     _callTimer?.cancel();
     _callSignalListener?.cancel();
-    _engine?.leaveChannel();
-    _engine?.release();
+    final eng = _engine; _engine = null;
+    if (eng != null) _agoraShutdown = _shutdownEngine(eng);
     super.dispose();
   }
 
@@ -124,6 +131,7 @@ class _CallScreenState extends State<CallScreen> {
 
   Future<void> _setupAgora() async {
     try {
+      if (_agoraShutdown != null) await _agoraShutdown;
       _engine = createAgoraRtcEngine();
       _step = 'initialize'; await _engine!.initialize(RtcEngineContext(appId: agoraAppId));
 
@@ -223,8 +231,8 @@ class _CallScreenState extends State<CallScreen> {
     // Update Firebase signal
     await _callRef.update({'status': 'ENDED'});
 
-    await _engine?.leaveChannel();
-    await _engine?.release();
+    final eng = _engine; _engine = null;
+    if (eng != null) { _agoraShutdown = _shutdownEngine(eng); await _agoraShutdown; }
 
     if (mounted) Navigator.pop(context);
   }
