@@ -1,3 +1,5 @@
+import 'chat_screen.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -57,6 +59,11 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   String? _lastCompletedRideId;
     String? _driverName;
 String? _driverPhone;
+  bool _isSendMode = false;
+  String _deliveryPin = '';
+  final _recipientNameCtrl = TextEditingController();
+  final _recipientPhoneCtrl = TextEditingController();
+  final _parcelNoteCtrl = TextEditingController();
 String? _driverPhoto;
   int _givenRating = 0;
   int _selectedView = 0;
@@ -108,6 +115,7 @@ String? _driverPhoto;
   }
 
   void dispose() {
+    _recipientNameCtrl.dispose(); _recipientPhoneCtrl.dispose(); _parcelNoteCtrl.dispose();
     _incomingCallListener?.cancel();
     _ticketListener?.cancel();
     _driverLocationListener?.cancel();
@@ -254,6 +262,56 @@ void _calculateFareStraightLine() {
     _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
   });
 }
+
+  Widget _modeOption(bool send, IconData icon, String label) {
+    final selected = _isSendMode == send;
+    return GestureDetector(
+      onTap: () => setState(() => _isSendMode = send),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? flisingOrange.withOpacity(0.15) : Colors.black,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: selected ? flisingOrange : Colors.white24),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: selected ? flisingOrange : Colors.white54, size: 20),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: selected ? Colors.white : Colors.white54, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sendField(TextEditingController c, String hint, IconData icon, TextInputType type) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextField(
+        controller: c,
+        keyboardType: type,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: Colors.white38),
+          prefixIcon: Icon(icon, color: flisingOrange, size: 20),
+          filled: true,
+          fillColor: Colors.white10,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _textPinToRecipient() async {
+    final phone = _recipientPhoneCtrl.text.trim();
+    final msg = 'Your Flising delivery PIN is $_deliveryPin. Give it to the driver when your parcel arrives.';
+    await launchUrl(Uri.parse('sms:$phone?body=${Uri.encodeComponent(msg)}'),
+        mode: LaunchMode.externalApplication);
+  }
 
   Widget _vehicleOption(String type, IconData icon, String label, String rate) {
     final bool selected = _vehicleType == type;
@@ -457,7 +515,7 @@ void _calculateFareStraightLine() {
   // Create ride with real driver UID
   final ridesRef = db.ref('rides');
   String newRideId = ridesRef.push().key!;
-  _currentRideId = newRideId; _watchIncomingCall(newRideId);
+  _currentRideId = newRideId; _watchIncomingCall(newRideId); _deliveryPin = _isSendMode ? (1000 + Random().nextInt(9000)).toString() : '';
 
   await db.ref('rides/$newRideId').set({
     'passengerId': currentUser?.uid ?? 'unknown_passenger',
@@ -471,6 +529,13 @@ void _calculateFareStraightLine() {
     'dropoffLat': _dropoffLocation!.latitude,
     'dropoffLng': _dropoffLocation!.longitude,
     'vehicleType': _vehicleType,
+    if (_isSendMode) ...{
+      'type': 'delivery',
+      'recipientName': _recipientNameCtrl.text.trim(),
+      'recipientPhone': _recipientPhoneCtrl.text.trim(),
+      'parcelNote': _parcelNoteCtrl.text.trim(),
+      'deliveryPin': _deliveryPin,
+    },
     'status': 'PENDING',
     'timestamp': ServerValue.timestamp,
   });
@@ -497,7 +562,7 @@ void _calculateFareStraightLine() {
         setState(() {
           _lastCompletedRideId = _currentRideId;
           _rideStatus = 'IDLE';
-          _currentRideId = null; _stopWatchingIncomingCall();
+          _currentRideId = null; _stopWatchingIncomingCall(); _deliveryPin = '';
           _showCompletionPopup = true;
         });
         _ticketListener?.cancel();
@@ -566,7 +631,7 @@ void _calculateFareStraightLine() {
     setState(() { _rideStatus = 'IDLE'; _showCancelButton = false; _cancelSecondsLeft = 120; });
     if (_currentRideId != null) {
       FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app').ref('rides/$_currentRideId').update({'status': 'CANCELLED_BY_PASSENGER'});
-      _currentRideId = null; _stopWatchingIncomingCall();
+      _currentRideId = null; _stopWatchingIncomingCall(); _deliveryPin = '';
     }
     _stopTrackingDriver();
     _ticketListener?.cancel();
@@ -710,6 +775,19 @@ if (_dropoffLocation != null)
       ],
     ),
   ),
+  Row(
+    children: [
+      Expanded(child: _modeOption(false, Icons.local_taxi, 'Ride')),
+      const SizedBox(width: 10),
+      Expanded(child: _modeOption(true, Icons.inventory_2, 'Send')),
+    ],
+  ),
+  const SizedBox(height: 12),
+  if (_isSendMode) ...[
+    _sendField(_recipientNameCtrl, 'Recipient name', Icons.person_outline, TextInputType.name),
+    _sendField(_recipientPhoneCtrl, 'Recipient phone', Icons.phone_outlined, TextInputType.phone),
+    _sendField(_parcelNoteCtrl, "What's in the parcel? (optional)", Icons.notes, TextInputType.text),
+  ],
   Container(
     margin: const EdgeInsets.only(bottom: 12),
     child: Row(
@@ -723,7 +801,14 @@ if (_dropoffLocation != null)
                           ElevatedButton(
                             onPressed: () {
                               if (_dropoffLocation != null) {
-                                _showPaymentSelection();
+                                if (_isSendMode && (_recipientNameCtrl.text.trim().isEmpty || _recipientPhoneCtrl.text.trim().length < 7)) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                    content: const Text("Enter the recipient's name and phone number"),
+                                    backgroundColor: flisingOrange,
+                                  ));
+                                } else {
+                                  _showPaymentSelection();
+                                }
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                   content: const Text('Set a dropoff location first'),
@@ -736,14 +821,14 @@ if (_dropoffLocation != null)
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            child: const Text("REQUEST RIDE", style: TextStyle(fontWeight: FontWeight.bold)),
+                            child: Text(_isSendMode ? "REQUEST DELIVERY" : "REQUEST RIDE", style: const TextStyle(fontWeight: FontWeight.bold)),
                           ),
                         ],
                         
                         if (_rideStatus == 'SEARCHING') ...[
                           const CircularProgressIndicator(color: Color(0xFFE9692C)),
                           const SizedBox(height: 20),
-                          const Text("Finding your premium ride...", style: TextStyle(color: Colors.white)),
+                          Text(_isSendMode ? "Finding a driver for your parcel..." : "Finding your premium ride...", style: const TextStyle(color: Colors.white)),
                           const SizedBox(height: 24),
                           ElevatedButton(
                       onPressed: _cancelRide,
@@ -752,8 +837,32 @@ if (_dropoffLocation != null)
                     ),
                         ],
                         
+                        if (_deliveryPin.isNotEmpty && (_rideStatus == 'ACCEPTED' || _rideStatus == 'IN_PROGRESS'))
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: flisingOrange.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: flisingOrange),
+                            ),
+                            child: Column(children: [
+                              const Text('DELIVERY PIN', style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1.5)),
+                              const SizedBox(height: 4),
+                              Text(_deliveryPin, style: TextStyle(color: flisingOrange, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 10)),
+                              const Text('Give this to the recipient. The driver needs it to finish.',
+                                  textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 12)),
+                              TextButton.icon(
+                                onPressed: _textPinToRecipient,
+                                icon: const Icon(Icons.sms_outlined, color: Colors.white),
+                                label: const Text('TEXT PIN TO RECIPIENT', style: TextStyle(color: Colors.white)),
+                              ),
+                            ]),
+                          ),
+
                         if (_rideStatus == 'ACCEPTED') ...[
-                          const Text("DRIVER ON THE WAY", style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                          Text(_deliveryPin.isNotEmpty ? "DRIVER COMING FOR YOUR PARCEL" : "DRIVER ON THE WAY", style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 10),
                           Row(
                             children: [
@@ -764,7 +873,21 @@ if (_dropoffLocation != null)
       ? const Icon(Icons.person, color: Colors.white) : null,
 ),
                               const SizedBox(width: 16),
-   Text(_driverName ?? 'Driver'),
+   Expanded(child: Text(_driverName ?? 'Driver', overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))),
+                              IconButton(
+                                icon: const Icon(Icons.chat_bubble, color: Colors.white),
+                                onPressed: () {
+                                  if (_currentRideId == null) return;
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (_) => ChatScreen(
+                                      rideId: _currentRideId!,
+                                      senderType: 'passenger',
+                                      otherPersonName: _driverName ?? 'Driver',
+                                      otherPersonPhoto: _driverPhoto,
+                                    ),
+                                  ));
+                                },
+                              ),
                               IconButton(
                                 icon: const Icon(Icons.phone_in_talk, color: Colors.greenAccent),
  onPressed: () {
