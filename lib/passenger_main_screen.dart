@@ -59,6 +59,10 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   String? _lastCompletedRideId;
     String? _driverName;
 String? _driverPhone;
+  String get _driverFirstName {
+    final n = (_driverName ?? '').trim();
+    return n.isEmpty ? 'Driver' : n.split(' ').first;
+  }
   bool _isSendMode = false;
   String _deliveryPin = '';
   final _recipientNameCtrl = TextEditingController();
@@ -102,7 +106,7 @@ String? _driverPhoto;
           rideId: rideId,
           isIncoming: true,
           callerType: 'passenger',
-          otherPersonName: _driverName ?? 'Driver',
+          otherPersonName: _driverFirstName,
           otherPersonPhoto: _driverPhoto,
         ),
       )).then((_) => _callScreenOpen = false);
@@ -873,7 +877,7 @@ if (_dropoffLocation != null)
       ? const Icon(Icons.person, color: Colors.white) : null,
 ),
                               const SizedBox(width: 16),
-   Expanded(child: Text(_driverName ?? 'Driver', overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))),
+   Expanded(child: Text(_driverFirstName, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))),
                               IconButton(
                                 icon: const Icon(Icons.chat_bubble, color: Colors.white),
                                 onPressed: () {
@@ -882,7 +886,7 @@ if (_dropoffLocation != null)
                                     builder: (_) => ChatScreen(
                                       rideId: _currentRideId!,
                                       senderType: 'passenger',
-                                      otherPersonName: _driverName ?? 'Driver',
+                                      otherPersonName: _driverFirstName,
                                       otherPersonPhoto: _driverPhoto,
                                     ),
                                   ));
@@ -897,7 +901,7 @@ if (_dropoffLocation != null)
                                     builder: (_) => CallScreen(
                                       rideId: _currentRideId!,
                                       callerType: 'passenger',
-                                      otherPersonName: _driverName ?? 'Driver',
+                                      otherPersonName: _driverFirstName,
                                       otherPersonPhoto: _driverPhoto,
                                     ),
                                   )).then((_) => _callScreenOpen = false);
