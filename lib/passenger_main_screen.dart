@@ -589,6 +589,18 @@ void _calculateFareStraightLine() {
         });
       } else if (currentStatus == 'IN_PROGRESS' && _rideStatus != 'IN_PROGRESS') {
         setState(() { _rideStatus = 'IN_PROGRESS'; _showCancelButton = false; });
+      } else if (currentStatus.startsWith('CANCELLED') && currentStatus != 'CANCELLED_BY_PASSENGER') {
+        setState(() {
+          _rideStatus = 'IDLE';
+          _currentRideId = null; _stopWatchingIncomingCall(); _deliveryPin = '';
+          _showCancelButton = false;
+        });
+        _ticketListener?.cancel();
+        _stopTrackingDriver();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('This trip was cancelled.'),
+          backgroundColor: Colors.red,
+        ));
       } else if (currentStatus == 'COMPLETED') {
         setState(() {
           _lastCompletedRideId = _currentRideId;
@@ -610,6 +622,15 @@ void _calculateFareStraightLine() {
     final snap = await db.ref('rides').orderByChild('passengerId').equalTo(uid).limitToLast(5).get();
     if (!mounted || snap.value == null) return;
     final rides = snap.value as Map<dynamic, dynamic>;
+    String? newestId;
+    int newestTs = -1;
+    for (final e in rides.entries) {
+      final v = e.value;
+      if (v is Map && (v['status'] == 'ACCEPTED' || v['status'] == 'IN_PROGRESS')) {
+        final ts = v['timestamp'] is num ? (v['timestamp'] as num).toInt() : 0;
+        if (ts > newestTs) { newestTs = ts; newestId = e.key.toString(); }
+      }
+    }
     for (final entry in rides.entries) {
       final r = entry.value;
       if (r is! Map) continue;
@@ -619,6 +640,10 @@ void _calculateFareStraightLine() {
         continue;
       }
       if (r['status'] != 'ACCEPTED' && r['status'] != 'IN_PROGRESS') continue;
+      if (id != newestId) {
+        db.ref('rides/$id').update({'status': 'CANCELLED_BY_PASSENGER'});
+        continue;
+      }
       setState(() {
         _currentRideId = id;
         _assignedDriverId = r['assignedDriverId']?.toString();
@@ -636,7 +661,6 @@ void _calculateFareStraightLine() {
       _watchIncomingCall(id);
       _startTrackingDriver();
       _listenToRide(id);
-      break;
     }
   }
 
@@ -868,7 +892,7 @@ if (_dropoffLocation != null)
                               minimumSize: const Size(double.infinity, 50),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            child: Text(_isSendMode ? "REQUEST DELIVERY" : "REQUEST RIDE", style: const TextStyle(fontWeight: FontWeight.bold)),
+                            child: Text(_isSendMode ? "REQUEST DELIVERY" : "REQUEST RIDE", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                           ),
                         ],
                         
