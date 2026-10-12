@@ -932,8 +932,8 @@ if (_dropoffLocation != null)
                             ]),
                           ),
 
-                        if (_rideStatus == 'ACCEPTED') ...[
-                          Text(_deliveryPin.isNotEmpty ? "DRIVER COMING FOR YOUR PARCEL" : "DRIVER ON THE WAY", style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                        if (_rideStatus == 'ACCEPTED' || _rideStatus == 'IN_PROGRESS') ...[
+                          Text(_rideStatus == 'IN_PROGRESS' ? (_deliveryPin.isNotEmpty ? "PARCEL ON ITS WAY" : "TRIP IN PROGRESS") : (_deliveryPin.isNotEmpty ? "DRIVER COMING FOR YOUR PARCEL" : "DRIVER ON THE WAY"), style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 10),
                           Row(
                             children: [
