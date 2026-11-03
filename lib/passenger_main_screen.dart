@@ -217,9 +217,9 @@ _locationStream = Geolocator.getPositionStream(
     if (data['status'] == 'OK') {
       final meters = data['routes'][0]['legs'][0]['distance']['value'];
       final distanceInKm = meters / 1000.0;
-      final perKm = _vehicleType == 'motorcycle' ? 2.00 : 3.00;
-      final rawFare = 7.00 + (distanceInKm * perKm);
-      final finalFare = rawFare.ceilToDouble();
+      final perKm = _isSendMode ? 5.00 : (_vehicleType == 'motorcycle' ? 5.50 : 6.70);
+      final rawFare = distanceInKm * perKm;
+      final finalFare = double.parse(rawFare.toStringAsFixed(2));
       if (mounted) setState(() {
         _calculatedFareAmount = finalFare;
         _estimatedFare = "K \${finalFare.toStringAsFixed(2)}";
@@ -259,9 +259,9 @@ void _calculateFareStraightLine() {
     activePickup.latitude, activePickup.longitude,
     _dropoffLocation!.latitude, _dropoffLocation!.longitude);
   final distanceInKm = (distanceInMeters / 1000) * 1.3; // approx road distance
-  final perKm = _vehicleType == 'motorcycle' ? 2.00 : 3.00;
-  final rawFare = 7.00 + (distanceInKm * perKm);
-  final finalFare = rawFare.ceilToDouble();
+  final perKm = _isSendMode ? 5.00 : (_vehicleType == 'motorcycle' ? 5.50 : 6.70);
+      final rawFare = distanceInKm * perKm;
+      final finalFare = double.parse(rawFare.toStringAsFixed(2));
   if (mounted) setState(() {
     _calculatedFareAmount = finalFare;
     _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
@@ -271,7 +271,7 @@ void _calculateFareStraightLine() {
   Widget _modeOption(bool send, IconData icon, String label) {
     final selected = _isSendMode == send;
     return GestureDetector(
-      onTap: () => setState(() => _isSendMode = send),
+      onTap: () { setState(() => _isSendMode = send); _calculateFare(); },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
