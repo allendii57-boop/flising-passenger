@@ -219,7 +219,8 @@ _locationStream = Geolocator.getPositionStream(
       final distanceInKm = meters / 1000.0;
       final perKm = _isSendMode ? 5.00 : (_vehicleType == 'motorcycle' ? 5.50 : 6.70);
       final rawFare = distanceInKm * perKm;
-      final finalFare = double.parse(rawFare.toStringAsFixed(2));
+      // Round up to the nearest 0.10 (10 toea)
+      final finalFare = (double.parse(rawFare.toStringAsFixed(2)) * 10).ceil() / 10.0;
       if (mounted) setState(() {
         _calculatedFareAmount = finalFare;
         _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
@@ -261,7 +262,8 @@ void _calculateFareStraightLine() {
   final distanceInKm = (distanceInMeters / 1000) * 1.3; // approx road distance
   final perKm = _isSendMode ? 5.00 : (_vehicleType == 'motorcycle' ? 5.50 : 6.70);
       final rawFare = distanceInKm * perKm;
-      final finalFare = double.parse(rawFare.toStringAsFixed(2));
+      // Round up to the nearest 0.10 (10 toea)
+      final finalFare = (double.parse(rawFare.toStringAsFixed(2)) * 10).ceil() / 10.0;
   if (mounted) setState(() {
     _calculatedFareAmount = finalFare;
     _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
