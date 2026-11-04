@@ -222,7 +222,7 @@ _locationStream = Geolocator.getPositionStream(
       final finalFare = double.parse(rawFare.toStringAsFixed(2));
       if (mounted) setState(() {
         _calculatedFareAmount = finalFare;
-        _estimatedFare = "K \${finalFare.toStringAsFixed(2)}";
+        _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
           final encoded = data['routes'][0]['overview_polyline']['points'];
           _routePoints = RouteService.decodePolyline(encoded as String);
           // Auto-zoom to fit the route
@@ -863,9 +863,9 @@ if (_dropoffLocation != null)
     margin: const EdgeInsets.only(bottom: 12),
     child: Row(
       children: [
-        Expanded(child: _vehicleOption('car', Icons.directions_car, 'Car', 'K4/km')),
+        Expanded(child: _vehicleOption('car', Icons.directions_car, 'Car', _isSendMode ? 'K5.00/km' : 'K6.70/km')),
         const SizedBox(width: 10),
-        Expanded(child: _vehicleOption('motorcycle', Icons.two_wheeler, 'Motorcycle', 'K3/km')),
+        Expanded(child: _vehicleOption('motorcycle', Icons.two_wheeler, 'Motorcycle', _isSendMode ? 'K5.00/km' : 'K5.50/km')),
       ],
     ),
   ),
