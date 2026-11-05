@@ -624,7 +624,21 @@ void _calculateFareStraightLine() {
           if (mounted && _rideStatus == 'ACCEPTED') setState(() { _showCancelButton = true; });
         });
       } else if (currentStatus == 'IN_PROGRESS' && _rideStatus != 'IN_PROGRESS') {
-        setState(() { _rideStatus = 'IN_PROGRESS'; _showCancelButton = false; });
+        final isDeliveryRide = rideData['type'] == 'delivery' || _isSendMode || _deliveryPin.isNotEmpty;
+        if (isDeliveryRide) {
+          setState(() {
+            _lastCompletedRideId = _currentRideId;
+            _rideStatus = 'IDLE';
+            _currentRideId = null;
+            _stopWatchingIncomingCall();
+            _showCancelButton = false;
+            _showCompletionPopup = true;
+          });
+          _ticketListener?.cancel();
+          _stopTrackingDriver();
+        } else {
+          setState(() { _rideStatus = 'IN_PROGRESS'; _showCancelButton = false; });
+        }
       } else if (currentStatus.startsWith('CANCELLED') && currentStatus != 'CANCELLED_BY_PASSENGER') {
         setState(() {
           _rideStatus = 'IDLE';
@@ -662,7 +676,7 @@ void _calculateFareStraightLine() {
     int newestTs = -1;
     for (final e in rides.entries) {
       final v = e.value;
-      if (v is Map && (v['status'] == 'ACCEPTED' || v['status'] == 'IN_PROGRESS')) {
+      if (v is Map && (v['status'] == 'ACCEPTED' || (v['status'] == 'IN_PROGRESS' && v['type'] != 'delivery'))) {
         final ts = v['timestamp'] is num ? (v['timestamp'] as num).toInt() : 0;
         if (ts > newestTs) { newestTs = ts; newestId = e.key.toString(); }
       }
@@ -675,7 +689,7 @@ void _calculateFareStraightLine() {
         db.ref('rides/$id').update({'status': 'CANCELLED_BY_PASSENGER'});
         continue;
       }
-      if (r['status'] != 'ACCEPTED' && r['status'] != 'IN_PROGRESS') continue;
+      if (r['status'] != 'ACCEPTED' && (r['status'] != 'IN_PROGRESS' || r['type'] == 'delivery')) continue;
       if (id != newestId) {
         db.ref('rides/$id').update({'status': 'CANCELLED_BY_PASSENGER'});
         continue;
@@ -753,7 +767,7 @@ void _calculateFareStraightLine() {
       _showCompletionPopup = false;
       _dropoffLocation = null;
       _estimatedFare = "K 0.00";
-      _dropoffText = "Tap map to set dropoff..."; _isSendMode = false; _recipientNameCtrl.clear(); _recipientPhoneCtrl.clear(); _parcelNoteCtrl.clear();
+      _dropoffText = "Tap map to set dropoff..."; _isSendMode = false; _deliveryPin = ''; _recipientNameCtrl.clear(); _recipientPhoneCtrl.clear(); _parcelNoteCtrl.clear();
     });
   }
 
@@ -1126,7 +1140,60 @@ void _calculateFareStraightLine() {
                       children: [
                         Icon(Icons.check_circle, color: flisingOrange, size: 60),
                         const SizedBox(height: 20),
-                        const Text("Thank you for choosing Flising.", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                        Text(
+                          _deliveryPin.isNotEmpty
+                              ? "Parcel picked up! Rate your driver."
+                              : "Thank you for choosing Flising.",
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                        if (_deliveryPin.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: flisingOrange.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: flisingOrange),
+                            ),
+                            child: Column(
+                              children: [
+                                const Text('DELIVERY PIN FOR RECIPIENT', style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 1.2)),
+                                const SizedBox(height: 4),
+                                Text(_deliveryPin, style: TextStyle(color: flisingOrange, fontSize: 26, fontWeight: FontWeight.bold, letterSpacing: 8)),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: _textPinToRecipient,
+                                        style: OutlinedButton.styleFrom(
+                                          side: const BorderSide(color: Colors.white38),
+                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                        ),
+                                        icon: const Icon(Icons.sms_outlined, color: Colors.white, size: 15),
+                                        label: const Text('SMS PIN', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: _whatsappPinToRecipient,
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF25D366),
+                                          padding: const EdgeInsets.symmetric(vertical: 6),
+                                        ),
+                                        icon: const Icon(Icons.chat_outlined, color: Colors.white, size: 15),
+                                        label: const Text('WHATSAPP', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
