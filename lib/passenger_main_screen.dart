@@ -40,7 +40,8 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   String _estimatedETA = "";
   double _calculatedFareAmount = 0.0;
   
-  String _vehicleType = 'car'; // 'car' or 'motorcycle'
+  String _vehicleType = 'car';
+  bool _isPanelMinimized = false; // 'car' or 'motorcycle'
   String _rideStatus = 'IDLE';
   String? _currentRideId;
   StreamSubscription<DatabaseEvent>? _ticketListener;
