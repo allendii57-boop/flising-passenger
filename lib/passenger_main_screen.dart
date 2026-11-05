@@ -275,18 +275,18 @@ void _calculateFareStraightLine() {
     return GestureDetector(
       onTap: () { setState(() => _isSendMode = send); _calculateFare(); },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: selected ? flisingOrange.withOpacity(0.15) : Colors.black,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(color: selected ? flisingOrange : Colors.white24),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: selected ? flisingOrange : Colors.white54, size: 20),
-            const SizedBox(width: 8),
-            Text(label, style: TextStyle(color: selected ? Colors.white : Colors.white54, fontWeight: FontWeight.w600)),
+            Icon(icon, color: selected ? flisingOrange : Colors.white54, size: 18),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(color: selected ? Colors.white : Colors.white54, fontSize: 13, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -295,19 +295,21 @@ void _calculateFareStraightLine() {
 
   Widget _sendField(TextEditingController c, String hint, IconData icon, TextInputType type) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 6),
       child: TextField(
         controller: c,
         keyboardType: type,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: Colors.white, fontSize: 13),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(color: Colors.white38),
-          prefixIcon: Icon(icon, color: flisingOrange, size: 20),
+          hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
+          prefixIcon: Icon(icon, color: flisingOrange, size: 18),
+          prefixIconConstraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+          isDense: true,
           filled: true,
           fillColor: Colors.white10,
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          contentPadding: const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
         ),
       ),
     );
@@ -320,6 +322,25 @@ void _calculateFareStraightLine() {
         mode: LaunchMode.externalApplication);
   }
 
+  Future<void> _whatsappPinToRecipient() async {
+    String digits = _recipientPhoneCtrl.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.startsWith('0')) digits = digits.substring(1);
+    if (digits.length >= 7 && digits.length <= 8 && !digits.startsWith('675')) {
+      digits = '675$digits';
+    }
+    final msg = 'Your Flising delivery PIN is $_deliveryPin. Give it to the driver when your parcel arrives.';
+    final waAppUri = Uri.parse('whatsapp://send?phone=$digits&text=${Uri.encodeComponent(msg)}');
+    final waWebUri = Uri.parse('https://wa.me/$digits?text=${Uri.encodeComponent(msg)}');
+    try {
+      final launched = await launchUrl(waAppUri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(waWebUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {
+      await launchUrl(waWebUri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   Widget _vehicleOption(String type, IconData icon, String label, String rate) {
     final bool selected = _vehicleType == type;
     return GestureDetector(
@@ -329,22 +350,34 @@ void _calculateFareStraightLine() {
         _calculateFare();
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
         decoration: BoxDecoration(
           color: selected ? flisingOrange.withOpacity(0.18) : Colors.black,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: selected ? flisingOrange : Colors.white24,
             width: selected ? 2 : 1,
           ),
         ),
-        child: Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: selected ? flisingOrange : Colors.white54, size: 24),
-            const SizedBox(height: 4),
-            Text(label, style: TextStyle(
-              color: selected ? Colors.white : Colors.white54,
-              fontSize: 13, fontWeight: FontWeight.w600)),
+            Icon(icon, color: selected ? flisingOrange : Colors.white54, size: 20),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(label, overflow: TextOverflow.ellipsis, style: TextStyle(
+                    color: selected ? Colors.white : Colors.white54,
+                    fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(rate, style: TextStyle(
+                    color: selected ? flisingOrange : Colors.white38,
+                    fontSize: 10, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -791,113 +824,184 @@ void _calculateFareStraightLine() {
                 child: Align(
                   alignment: Alignment.bottomCenter,
                   child: Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(20),
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
                     decoration: BoxDecoration(color: darkSurface, borderRadius: BorderRadius.circular(24)),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_rideStatus == 'IDLE') ...[
-                          Row(
-                            children: [
-                              GestureDetector(
-  onTap: () {
-    setState(() {
-      _customPickupLocation = null;
-      _pickupText = "My Current Location";
-    });
-    mapController.animateCamera(CameraUpdate.newLatLngZoom(_myLocation, 16.0));
-  },
-  child: Icon(Icons.my_location, color: flisingOrange, size: 20),
-),
-                              const SizedBox(width: 12),
-                              Expanded(child: Text(_pickupText, style: const TextStyle(color: Colors.white, fontSize: 16))),
-                              IconButton(icon: const Icon(Icons.search, color: Colors.white54), onPressed: () => _showLocationSearchSheet(true)),
-                            ],
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => setState(() => _isPanelMinimized = !_isPanelMinimized),
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const SizedBox(width: 24),
+                                  Container(
+                                    width: 36,
+                                    height: 4,
+                                    decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(_isPanelMinimized ? "Expand" : "Map", style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                                      Icon(_isPanelMinimized ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, color: Colors.white54, size: 18),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          const Divider(color: Colors.white12),
-                          Row(
-                            children: [
-                              Icon(Icons.location_on, color: _dropoffLocation != null ? flisingOrange : Colors.white54, size: 20),
-                              const SizedBox(width: 12),
-                              Expanded(child: Text(_dropoffText, style: const TextStyle(color: Colors.white, fontSize: 16))),
-                              IconButton(icon: const Icon(Icons.search, color: Colors.white54), onPressed: () => _showLocationSearchSheet(false)),
+                          if (_isPanelMinimized) ...[
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _dropoffLocation == null ? "Tap anywhere on map to set dropoff" : _dropoffText,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  ),
+                                ),
+                                if (_dropoffLocation != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 8),
+                                    child: Text(_estimatedFare, style: TextStyle(color: flisingOrange, fontSize: 16, fontWeight: FontWeight.bold)),
+                                  ),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () => setState(() => _isPanelMinimized = false),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: flisingOrange,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    minimumSize: Size.zero,
+                                  ),
+                                  child: const Text("OPEN", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          ] else ...[
+                            Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _customPickupLocation = null;
+                                      _pickupText = "My Current Location";
+                                    });
+                                    mapController.animateCamera(CameraUpdate.newLatLngZoom(_myLocation, 16.0));
+                                  },
+                                  child: Icon(Icons.my_location, color: flisingOrange, size: 18),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(child: Text(_pickupText, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 14))),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: const Icon(Icons.search, color: Colors.white54, size: 20),
+                                  onPressed: () => _showLocationSearchSheet(true),
+                                ),
+                              ],
+                            ),
+                            const Divider(color: Colors.white12, height: 12),
+                            Row(
+                              children: [
+                                Icon(Icons.location_on, color: _dropoffLocation != null ? flisingOrange : Colors.white54, size: 18),
+                                const SizedBox(width: 10),
+                                Expanded(child: Text(_dropoffText, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 14))),
+                                IconButton(
+                                  visualDensity: VisualDensity.compact,
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  icon: const Icon(Icons.search, color: Colors.white54, size: 20),
+                                  onPressed: () => _showLocationSearchSheet(false),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (_dropoffLocation != null)
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: flisingOrange.withOpacity(0.4)),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(children: [
+                                      Icon(Icons.payments_outlined, color: flisingOrange, size: 16),
+                                      const SizedBox(width: 6),
+                                      const Text("Estimated Fare", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                                    ]),
+                                    Text(_estimatedFare, style: TextStyle(color: flisingOrange, fontSize: 16, fontWeight: FontWeight.bold)),
+                                    if (_estimatedETA.isNotEmpty)
+                                      Text('~$_estimatedETA', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                            Row(
+                              children: [
+                                Expanded(child: _modeOption(false, Icons.local_taxi, 'Ride')),
+                                const SizedBox(width: 8),
+                                Expanded(child: _modeOption(true, Icons.inventory_2, 'Send')),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (_isSendMode) ...[
+                              Row(
+                                children: [
+                                  Expanded(child: _sendField(_recipientNameCtrl, 'Recipient name', Icons.person_outline, TextInputType.name)),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: _sendField(_recipientPhoneCtrl, 'Phone number', Icons.phone_outlined, TextInputType.phone)),
+                                ],
+                              ),
+                              _sendField(_parcelNoteCtrl, "What's in the parcel? (optional)", Icons.notes, TextInputType.text),
                             ],
-                          ),
-                          const SizedBox(height: 12),
-if (_dropoffLocation != null)
-  Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    decoration: BoxDecoration(
-      color: Colors.black,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: flisingOrange.withOpacity(0.4)),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(children: [
-          Icon(Icons.payments_outlined, color: flisingOrange, size: 18),
-          const SizedBox(width: 8),
-          const Text("Estimated Fare", style: TextStyle(color: Colors.white54, fontSize: 13)),
-        ]),
-        Text(_estimatedFare, style: TextStyle(color: flisingOrange, fontSize: 18, fontWeight: FontWeight.bold)),
-        if (_estimatedETA.isNotEmpty)
-          Text('~$_estimatedETA', style: const TextStyle(color: Colors.white54, fontSize: 13)),
-      ],
-    ),
-  ),
-  Row(
-    children: [
-      Expanded(child: _modeOption(false, Icons.local_taxi, 'Ride')),
-      const SizedBox(width: 10),
-      Expanded(child: _modeOption(true, Icons.inventory_2, 'Send')),
-    ],
-  ),
-  const SizedBox(height: 12),
-  if (_isSendMode) ...[
-    _sendField(_recipientNameCtrl, 'Recipient name', Icons.person_outline, TextInputType.name),
-    _sendField(_recipientPhoneCtrl, 'Recipient phone', Icons.phone_outlined, TextInputType.phone),
-    _sendField(_parcelNoteCtrl, "What's in the parcel? (optional)", Icons.notes, TextInputType.text),
-  ],
-  Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    child: Row(
-      children: [
-        Expanded(child: _vehicleOption('car', Icons.directions_car, 'Car', _isSendMode ? 'K5.00/km' : 'K6.70/km')),
-        const SizedBox(width: 10),
-        Expanded(child: _vehicleOption('motorcycle', Icons.two_wheeler, 'Motorcycle', _isSendMode ? 'K5.00/km' : 'K5.50/km')),
-      ],
-    ),
-  ),
-                          ElevatedButton(
-                            onPressed: () {
-                              if (_dropoffLocation != null) {
-                                if (_isSendMode && (_recipientNameCtrl.text.trim().isEmpty || _recipientPhoneCtrl.text.trim().length < 7)) {
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  Expanded(child: _vehicleOption('car', Icons.directions_car, 'Car', _isSendMode ? 'K5.00/km' : 'K6.70/km')),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: _vehicleOption('motorcycle', Icons.two_wheeler, 'Motorcycle', _isSendMode ? 'K5.00/km' : 'K5.50/km')),
+                                ],
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {
+                                if (_dropoffLocation != null) {
+                                  if (_isSendMode && (_recipientNameCtrl.text.trim().isEmpty || _recipientPhoneCtrl.text.trim().length < 7)) {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                      content: const Text("Enter the recipient's name and phone number"),
+                                      backgroundColor: flisingOrange,
+                                    ));
+                                  } else {
+                                    _showPaymentSelection();
+                                  }
+                                } else {
                                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                    content: const Text("Enter the recipient's name and phone number"),
+                                    content: const Text('Set a dropoff location first'),
                                     backgroundColor: flisingOrange,
                                   ));
-                                } else {
-                                  _showPaymentSelection();
                                 }
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                  content: const Text('Set a dropoff location first'),
-                                  backgroundColor: flisingOrange,
-                                ));
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: flisingOrange,
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: flisingOrange,
+                                minimumSize: const Size(double.infinity, 44),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              child: Text(_isSendMode ? "REQUEST DELIVERY" : "REQUEST RIDE", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                             ),
-                            child: Text(_isSendMode ? "REQUEST DELIVERY" : "REQUEST RIDE", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-                          ),
+                          ],
                         ],
-                        
                         if (_rideStatus == 'SEARCHING') ...[
                           const CircularProgressIndicator(color: Color(0xFFE9692C)),
                           const SizedBox(height: 20),
@@ -926,10 +1030,33 @@ if (_dropoffLocation != null)
                               Text(_deliveryPin, style: TextStyle(color: flisingOrange, fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 10)),
                               const Text('Give this to the recipient. The driver needs it to finish.',
                                   textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, fontSize: 12)),
-                              TextButton.icon(
-                                onPressed: _textPinToRecipient,
-                                icon: const Icon(Icons.sms_outlined, color: Colors.white),
-                                label: const Text('TEXT PIN TO RECIPIENT', style: TextStyle(color: Colors.white)),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: _textPinToRecipient,
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(color: Colors.white38),
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                      ),
+                                      icon: const Icon(Icons.sms_outlined, color: Colors.white, size: 16),
+                                      label: const Text('SMS PIN', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: _whatsappPinToRecipient,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF25D366),
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                      ),
+                                      icon: const Icon(Icons.chat_outlined, color: Colors.white, size: 16),
+                                      label: const Text('WHATSAPP PIN', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ]),
                           ),
