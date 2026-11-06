@@ -79,7 +79,6 @@ exports.notifyDriverNewRide = functions.database
     const driverId = ride.assignedDriverId;
     if (!driverId) return null;
 
-    // Get driver's FCM token
     const driverSnap = await admin.database()
       .ref(`drivers/${driverId}/fcmToken`)
       .get();
@@ -89,21 +88,48 @@ exports.notifyDriverNewRide = functions.database
 
     const message = {
       token: fcmToken,
-      notification: {
-        title: '🚗 New Ride Request!',
-        body: `Pickup: ${ride.pickupText} → ${ride.dropoffText}`,
-      },
       data: {
-        rideId: context.params.rideId,
+        rideId: String(context.params.rideId),
         type: 'NEW_RIDE',
+        pickupText: String(ride.pickupText || 'Pickup location'),
+        dropoffText: String(ride.dropoffText || 'Dropoff location'),
+        fare: String(ride.fare || 'K 0.00'),
       },
       android: {
         priority: 'high',
-        notification: { sound: 'default' }
+        ttl: 30000
       }
     };
 
     return admin.messaging().send(message);
+  });
+
+// 3b. PUSH NOTIFICATION — dismiss CallKit when passenger cancels
+exports.notifyDriverRideCancelled = functions.database
+  .ref('rides/{rideId}/status')
+  .onUpdate(async (change, context) => {
+    const before = change.before.val();
+    const after = change.after.val();
+
+    if (before === 'PENDING' && String(after).startsWith('CANCELLED')) {
+      const rideSnap = await admin.database().ref(`rides/${context.params.rideId}`).get();
+      if (!rideSnap.exists()) return null;
+      const ride = rideSnap.val();
+      if (!ride.assignedDriverId) return null;
+
+      const driverSnap = await admin.database().ref(`drivers/${ride.assignedDriverId}/fcmToken`).get();
+      if (!driverSnap.exists()) return null;
+
+      return admin.messaging().send({
+        token: driverSnap.val(),
+        data: {
+          rideId: String(context.params.rideId),
+          type: 'RIDE_CANCELLED'
+        },
+        android: { priority: 'high' }
+      });
+    }
+    return null;
   });
 
 // ============================================
