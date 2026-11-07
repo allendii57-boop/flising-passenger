@@ -63,6 +63,12 @@ class _CallScreenState extends State<CallScreen> {
   bool _otherPersonJoined = false;
 
   int _callDurationSeconds = 0;
+  bool _hasPopped = false;
+  void _safePop() {
+    if (_hasPopped || !mounted) return;
+    _hasPopped = true;
+    if (Navigator.canPop(context)) _safePop();
+  }
   Timer? _callTimer;
   StreamSubscription<DatabaseEvent>? _callSignalListener;
 
@@ -99,7 +105,7 @@ class _CallScreenState extends State<CallScreen> {
             backgroundColor: Colors.red,
           ),
         );
-        Navigator.pop(context);
+        _safePop();
       }
       return;
     }
@@ -195,7 +201,7 @@ class _CallScreenState extends State<CallScreen> {
             backgroundColor: Colors.red,
           ),
         );
-        Navigator.pop(context);
+        _safePop();
       }
     }
   }
@@ -234,7 +240,7 @@ class _CallScreenState extends State<CallScreen> {
     final eng = _engine; _engine = null;
     if (eng != null) { _agoraShutdown = _shutdownEngine(eng); await _agoraShutdown; }
 
-    if (mounted) Navigator.pop(context);
+    _safePop();
   }
 
   // ── BUILD ─────────────────────────────────────────────
