@@ -47,6 +47,7 @@ class _PassengerMainScreenState extends State<PassengerMainScreen> {
   StreamSubscription<DatabaseEvent>? _ticketListener;
   StreamSubscription<DatabaseEvent>? _incomingCallListener;
   bool _callScreenOpen = false;
+  bool _isRideCardMinimized = false;
   StreamSubscription<DatabaseEvent>? _driverLocationListener;
   StreamSubscription<Position>? _locationStream;
   
@@ -652,6 +653,7 @@ void _calculateFareStraightLine() {
           backgroundColor: Colors.red,
         ));
       } else if (currentStatus == 'COMPLETED') {
+        _isRideCardMinimized = false;
         setState(() {
           _lastCompletedRideId = _currentRideId;
           _rideStatus = 'IDLE';
@@ -1029,7 +1031,7 @@ void _calculateFareStraightLine() {
                     ),
                         ],
                         
-                        if (_deliveryPin.isNotEmpty && (_rideStatus == 'ACCEPTED' || _rideStatus == 'IN_PROGRESS'))
+                        if (!_isRideCardMinimized && _deliveryPin.isNotEmpty && (_rideStatus == 'ACCEPTED' || _rideStatus == 'IN_PROGRESS'))
                           Container(
                             width: double.infinity,
                             margin: const EdgeInsets.only(bottom: 12),
@@ -1077,7 +1079,45 @@ void _calculateFareStraightLine() {
                           ),
 
                         if (_rideStatus == 'ACCEPTED' || _rideStatus == 'IN_PROGRESS') ...[
-                          Text(_rideStatus == 'IN_PROGRESS' ? (_deliveryPin.isNotEmpty ? "PARCEL ON ITS WAY" : "TRIP IN PROGRESS") : (_deliveryPin.isNotEmpty ? "DRIVER COMING FOR YOUR PARCEL" : "DRIVER ON THE WAY"), style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                          InkWell(
+                            onTap: () => setState(() => _isRideCardMinimized = !_isRideCardMinimized),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    _rideStatus == 'IN_PROGRESS'
+                                        ? (_deliveryPin.isNotEmpty ? "📦 PARCEL ON ITS WAY" : "🟢 TRIP IN PROGRESS")
+                                        : (_deliveryPin.isNotEmpty ? "📦 DRIVER COMING FOR PARCEL" : "🚗 DRIVER ON THE WAY"),
+                                    style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white10,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _isRideCardMinimized ? "EXPAND" : "MINIMIZE",
+                                        style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Icon(
+                                        _isRideCardMinimized ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (!_isRideCardMinimized) ...[
                           const SizedBox(height: 10),
                           Row(
                             children: [
@@ -1121,6 +1161,7 @@ void _calculateFareStraightLine() {
                             ],
                           ),
                           if (_showCancelButton) ElevatedButton(onPressed: _cancelRide, child: const Text("CANCEL RIDE")),
+                          ],
                         ],
                       ],
                     ),
