@@ -67,7 +67,7 @@ class _CallScreenState extends State<CallScreen> {
   void _safePop() {
     if (_hasPopped || !mounted) return;
     _hasPopped = true;
-    if (Navigator.canPop(context)) _safePop();
+    if (Navigator.canPop(context)) Navigator.pop(context);
   }
   Timer? _callTimer;
   StreamSubscription<DatabaseEvent>? _callSignalListener;
