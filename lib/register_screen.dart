@@ -18,6 +18,7 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _agreedToTerms = false;
 
   final Color flisingOrange = const Color(0xFFE9692C);
 
@@ -28,6 +29,80 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _showTermsDialog() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.75,
+        maxChildSize: 0.9,
+        builder: (_, controller) => Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Passenger Terms & Conditions',
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(color: Colors.white24),
+              Expanded(
+                child: ListView(
+                  controller: controller,
+                  children: const [
+                    Text(
+                      'Flising Technologies - Passenger Agreement\n\n'
+                      '1. Service Overview\n'
+                      'Flising connects passengers with independent verified drivers across Papua New Guinea for passenger transport and parcel delivery.\n\n'
+                      '2. Account & Verification\n'
+                      'You must provide your real full name, active phone number, and valid email address. For safety and community security, identity verification may be required.\n\n'
+                      '3. Fares & Payments\n'
+                      'Fares are calculated based on GPS distance and vehicle type (Car, Motorcycle, or Send Delivery) and rounded to the nearest 10 toea. Passengers must pay the agreed fare upon completion of the trip.\n\n'
+                      '4. Cancellations & Conduct\n'
+                      'Passengers may cancel within the allowed window before a driver arrives. Repeated false bookings, abusive behavior, or illegal items in parcel deliveries will result in immediate account suspension.\n\n'
+                      '5. Location & Privacy\n'
+                      'Flising uses real-time GPS location during active bookings to match you with nearby drivers, calculate live ETAs, and maintain trip safety records.',
+                      style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() => _agreedToTerms = true);
+                  Navigator.pop(ctx);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: flisingOrange,
+                  minimumSize: const Size(double.infinity, 48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('I ACCEPT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _register() async {
@@ -46,27 +121,23 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
       return;
     }
 
+    if (!_agreedToTerms) {
+      _showSnack('Please accept the Terms & Conditions to continue.', isError: true);
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     UserCredential? userCredential;
 
     try {
-      // 1. Create Firebase Auth account
       userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // 2. Save name in Auth displayName — carried to DB only after email verified
       await userCredential.user?.updateDisplayName(name);
-
-      // Note: phone is stored in DB on first verified login (in passenger login_screen.dart)
-
-      // 3. Send verification email
       await userCredential.user?.sendEmailVerification();
-
-      // 4. Sign out immediately — NO DB write yet
-      //    Firebase Database will NOT store any passenger data until email is verified
       await _auth.signOut();
 
       if (!mounted) return;
@@ -78,7 +149,6 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
       await Future.delayed(const Duration(seconds: 4));
       if (mounted) Navigator.pushReplacementNamed(context, '/login');
     } on FirebaseAuthException catch (e) {
-      // Clean up — delete auth account so nothing broken is stored
       try {
         await userCredential?.user?.delete();
       } catch (_) {}
@@ -179,32 +249,24 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
               style: TextStyle(color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 40),
-
-            // Full Name
             _buildField(
               _nameController,
               'Full Name',
               Icons.person_outline,
               helperText: 'This name will be shown to your driver',
             ),
-
-            // Phone
             _buildField(
               _phoneController,
               'Phone Number',
               Icons.phone_android,
               type: TextInputType.phone,
             ),
-
-            // Email
             _buildField(
               _emailController,
               'Email Address',
               Icons.email_outlined,
               type: TextInputType.emailAddress,
             ),
-
-            // Password with toggle
             Padding(
               padding: const EdgeInsets.only(bottom: 20),
               child: TextFormField(
@@ -232,11 +294,9 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                 ),
               ),
             ),
-
-            // Info banner
             Container(
               padding: const EdgeInsets.all(14),
-              margin: const EdgeInsets.only(bottom: 30),
+              margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
                 color: flisingOrange.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(12),
@@ -257,7 +317,41 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                 ],
               ),
             ),
-
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Checkbox(
+                    value: _agreedToTerms,
+                    activeColor: flisingOrange,
+                    side: const BorderSide(color: Colors.white54),
+                    onChanged: (v) => setState(() => _agreedToTerms = v ?? false),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _showTermsDialog,
+                      child: RichText(
+                        text: TextSpan(
+                          style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          children: [
+                            const TextSpan(text: 'I agree to the '),
+                            TextSpan(
+                              text: 'Terms & Conditions and Privacy Policy',
+                              style: TextStyle(
+                                color: flisingOrange,
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             ElevatedButton(
               onPressed: _isLoading ? null : _register,
               style: ElevatedButton.styleFrom(

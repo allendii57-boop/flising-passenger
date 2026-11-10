@@ -716,6 +716,28 @@ void _calculateFareStraightLine() {
     }
   }
 
+
+  String _getDriverEtaBadge() {
+    if (_driverLocation == null) return "Calculating ETA...";
+    final target = _rideStatus == 'IN_PROGRESS'
+        ? (_dropoffLocation ?? _myLocation)
+        : (_customPickupLocation ?? _myLocation);
+    final meters = Geolocator.distanceBetween(
+      _driverLocation!.latitude,
+      _driverLocation!.longitude,
+      target.latitude,
+      target.longitude,
+    );
+    if (meters < 100) return "Arriving now (<100m)";
+    // Default 30 km/h (8.33 m/s) in town
+    final totalSecs = (meters / 8.33).round();
+    final mins = totalSecs ~/ 60;
+    final secs = totalSecs % 60;
+    final km = (meters / 1000).toStringAsFixed(1);
+    if (mins <= 0) return "ETA ~${secs}s (${km} km)";
+    return "ETA ~${mins}m ${secs}s (${km} km)";
+  }
+
   void _startTrackingDriver() {
     if (_assignedDriverId == null) return;
     DatabaseReference driverRef = FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app').ref('drivers/$_assignedDriverId');
@@ -1087,8 +1109,8 @@ void _calculateFareStraightLine() {
                                 Expanded(
                                   child: Text(
                                     _rideStatus == 'IN_PROGRESS'
-                                        ? (_deliveryPin.isNotEmpty ? "📦 PARCEL ON ITS WAY" : "🟢 TRIP IN PROGRESS")
-                                        : (_deliveryPin.isNotEmpty ? "📦 DRIVER COMING FOR PARCEL" : "🚗 DRIVER ON THE WAY"),
+                                        ? (_deliveryPin.isNotEmpty ? "📦 PARCEL ON ITS WAY • ${_getDriverEtaBadge()}" : "🟢 TRIP IN PROGRESS • ${_getDriverEtaBadge()}")
+                                        : (_deliveryPin.isNotEmpty ? "📦 DRIVER COMING • ${_getDriverEtaBadge()}" : "🚗 DRIVER ON THE WAY • ${_getDriverEtaBadge()}"),
                                     style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 13),
                                   ),
                                 ),
@@ -1129,35 +1151,55 @@ void _calculateFareStraightLine() {
 ),
                               const SizedBox(width: 16),
    Expanded(child: Text(_driverFirstName, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold))),
-                              IconButton(
-                                icon: const Icon(Icons.chat_bubble, color: Colors.white),
-                                onPressed: () {
-                                  if (_currentRideId == null) return;
-                                  Navigator.push(context, MaterialPageRoute(
-                                    builder: (_) => ChatScreen(
-                                      rideId: _currentRideId!,
-                                      senderType: 'passenger',
-                                      otherPersonName: _driverFirstName,
-                                      otherPersonPhoto: _driverPhoto,
-                                    ),
-                                  ));
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.phone_in_talk, color: Colors.greenAccent),
- onPressed: () {
-                                  if (_currentRideId == null) return;
-                                  _callScreenOpen = true;
-                                  Navigator.push(context, MaterialPageRoute(
-                                    builder: (_) => CallScreen(
-                                      rideId: _currentRideId!,
-                                      callerType: 'passenger',
-                                      otherPersonName: _driverFirstName,
-                                      otherPersonPhoto: _driverPhoto,
-                                    ),
-                                  )).then((_) => _callScreenOpen = false);
-                                },
-                              ),
+                              if (_rideStatus == 'ACCEPTED') ...[
+                                if (_rideStatus == 'ACCEPTED') ...[
+                                IconButton(
+                                  icon: const Icon(Icons.chat_bubble, color: Colors.white),
+                                  onPressed: () {
+                                    if (_currentRideId == null) return;
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (_) => ChatScreen(
+                                        rideId: _currentRideId!,
+                                        senderType: 'passenger',
+                                        otherPersonName: _driverFirstName,
+                                        otherPersonPhoto: _driverPhoto,
+                                      ),
+                                    ));
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.phone_in_talk, color: Colors.greenAccent),
+                                  onPressed: () {
+                                    if (_currentRideId == null) return;
+                                    _callScreenOpen = true;
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (_) => CallScreen(
+                                        rideId: _currentRideId!,
+                                        callerType: 'passenger',
+                                        otherPersonName: _driverFirstName,
+                                        otherPersonPhoto: _driverPhoto,
+                                      ),
+                                    )).then((_) => _callScreenOpen = false);
+                                  },
+                                ),
+                              ] else const Text("🔒 On Trip", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                              ] else ...[
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white10,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.lock_outline, color: Colors.white54, size: 14),
+                                      SizedBox(width: 4),
+                                      Text("Calls locked on trip", style: TextStyle(color: Colors.white54, fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                           if (_showCancelButton) ElevatedButton(onPressed: _cancelRide, child: const Text("CANCEL RIDE")),
