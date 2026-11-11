@@ -31,7 +31,8 @@ jobs:
         run: flutter pub get
       - name: Generate launcher icons
         run: |
-          convert assets/images/flising-ride.png -fuzz 15% -trim +repage -resize 620x620 -background "#0B1017" -gravity center -extent 1024x1024 assets/images/flising-ride.png
+          sudo apt-get update && sudo apt-get install -y python3-pil
+          python3 pad_icon.py
           dart run flutter_launcher_icons
 
       - name: Build APK
