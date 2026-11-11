@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class PassengerRegisterScreen extends StatefulWidget {
   const PassengerRegisterScreen({super.key});
@@ -137,6 +139,16 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
       );
 
       await userCredential.user?.updateDisplayName(name);
+      await FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+      ).ref('users/passengers/${userCredential.user!.uid}').set({
+        'fullName': name,
+        'email': email,
+        'role': 'passenger',
+        'isVerified': true,
+        'registeredAt': ServerValue.timestamp,
+      });
       await userCredential.user?.sendEmailVerification();
       await _auth.signOut();
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -27,7 +29,15 @@ class _SplashScreenState extends State<SplashScreen>
         if (user != null) {
           await user.reload().timeout(const Duration(seconds: 4));
           if (FirebaseAuth.instance.currentUser?.emailVerified ?? false) {
-            target = '/passenger_main';
+            final snap = await FirebaseDatabase.instanceFor(
+              app: Firebase.app(),
+              databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app',
+            ).ref('users/passengers/${user.uid}').get().timeout(const Duration(seconds: 6));
+            if (snap.exists && !(snap.value is Map && (snap.value as Map)['deleted'] == true)) {
+              target = '/passenger_main';
+            } else {
+              try { await user.delete(); } catch (_) { await FirebaseAuth.instance.signOut(); }
+            }
           }
         }
       } catch (_) {
