@@ -59,5 +59,5 @@ flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/images/flising-ride.png"
-  adaptive_icon_background: "#0A0A0A"
+  adaptive_icon_background: "#0B1017"
   adaptive_icon_foreground: "assets/images/flising-ride.png"

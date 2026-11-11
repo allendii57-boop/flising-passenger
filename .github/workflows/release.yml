@@ -29,6 +29,7 @@ jobs:
 
       - name: Install dependencies
         run: flutter pub get
+          convert assets/images/flising-ride.png -fuzz 15% -trim +repage -resize 620x620 -background "#0B1017" -gravity center -extent 1024x1024 assets/images/flising-ride.png
           dart run flutter_launcher_icons
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons
