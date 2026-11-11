@@ -27,14 +27,20 @@ class _PassengerPaymentsPageState extends State<PassengerPaymentsPage> {
   @override
   void initState() {
     super.initState();
-    _userRef()?.child('preferredPayment').get().then((snap) {
-      if (snap.exists && mounted) {
-        setState(() => _selectedMethod = snap.value.toString());
-      }
-    });
+    // Enforce cash as default while BSP Mobile is locked
+    _selectedMethod = 'cash';
+    _userRef()?.update({'preferredPayment': 'cash'});
   }
 
-  Future<void> _selectMethod(String method, String label) async {
+  Future<void> _selectMethod(String method, String label, {bool locked = false}) async {
+    if (locked) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('BSP Mobile / Transfer is currently locked. Please use Cash Payment (Kina).'),
+        backgroundColor: Color(0xFFD32F2F),
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
     setState(() => _selectedMethod = method);
     await _userRef()?.update({'preferredPayment': method});
     if (mounted) {
@@ -51,29 +57,63 @@ class _PassengerPaymentsPageState extends State<PassengerPaymentsPage> {
     required IconData icon,
     required String title,
     required String subtitle,
+    bool locked = false,
   }) {
-    final active = _selectedMethod == id;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: darkSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: active ? flisingOrange : Colors.white12, width: 1.5),
-      ),
-      child: ListTile(
-        onTap: () => _selectMethod(id, title),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: flisingOrange.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: flisingOrange, size: 28),
+    final active = !locked && _selectedMethod == id;
+    return Opacity(
+      opacity: locked ? 0.55 : 1.0,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          color: darkSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: active ? flisingOrange : Colors.white12, width: 1.5),
         ),
-        title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
-        trailing: Icon(
-          active ? Icons.check_circle : Icons.radio_button_unchecked,
-          color: active ? flisingOrange : Colors.white30,
-          size: 24,
+        child: ListTile(
+          onTap: () => _selectMethod(id, title, locked: locked),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (locked ? Colors.grey : flisingOrange).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: locked ? Colors.white38 : flisingOrange, size: 28),
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: locked ? Colors.white54 : Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              if (locked)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white12,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'LOCKED',
+                    style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
+            ],
+          ),
+          subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+          trailing: Icon(
+            locked
+                ? Icons.lock_outline
+                : (active ? Icons.check_circle : Icons.radio_button_unchecked),
+            color: locked ? Colors.white38 : (active ? flisingOrange : Colors.white30),
+            size: 24,
+          ),
         ),
       ),
     );
@@ -101,12 +141,14 @@ class _PassengerPaymentsPageState extends State<PassengerPaymentsPage> {
               icon: Icons.payments_outlined,
               title: "Cash Payment (Kina)",
               subtitle: "Pay your driver directly in cash",
+              locked: false,
             ),
             _methodCard(
               id: 'bsp_mobile',
               icon: Icons.phone_android_outlined,
               title: "BSP Mobile / Transfer",
-              subtitle: "Transfer directly to driver on arrival",
+              subtitle: "Unavailable for now (Cash Only)",
+              locked: true,
             ),
           ],
         ),

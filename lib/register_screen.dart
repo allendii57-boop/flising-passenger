@@ -71,17 +71,19 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                   controller: controller,
                   children: const [
                     Text(
-                      'Flising Technologies - Passenger Agreement\n\n'
+                      'Flising Ride - Passenger Terms & Conditions\n\n'
                       '1. Service Overview\n'
-                      'Flising connects passengers with independent verified drivers across Papua New Guinea for passenger transport and parcel delivery.\n\n'
-                      '2. Account & Verification\n'
-                      'You must provide your real full name, active phone number, and valid email address. For safety and community security, identity verification may be required.\n\n'
-                      '3. Fares & Payments\n'
-                      'Fares are calculated based on GPS distance and vehicle type (Car, Motorcycle, or Send Delivery) and rounded to the nearest 10 toea. Passengers must pay the agreed fare upon completion of the trip.\n\n'
-                      '4. Cancellations & Conduct\n'
-                      'Passengers may cancel within the allowed window before a driver arrives. Repeated false bookings, abusive behavior, or illegal items in parcel deliveries will result in immediate account suspension.\n\n'
-                      '5. Location & Privacy\n'
-                      'Flising uses real-time GPS location during active bookings to match you with nearby drivers, calculate live ETAs, and maintain trip safety records.',
+                      'Flising Ride connects passengers with verified drivers across Papua New Guinea for safe, reliable passenger transport and parcel delivery.\n\n'
+                      '2. Data Ownership, Security & Privacy\n'
+                      'All photographs, full names, phone numbers, and identification details collected by Flising Ride are strictly for internal record-keeping and the safety and security of both passengers and drivers. This information will NEVER be sold, disclosed, or given to any third party, and remains the sole and exclusive property of Flising Ride.\n\n'
+                      '3. Account & Identity Verification\n'
+                      'Passengers must provide their true full name, active phone number, valid email address, and verification photo where required. Impersonation or false registration details will result in immediate account termination.\n\n'
+                      '4. Fares & Cash Payments\n'
+                      'Fares are automatically calculated by GPS distance and service type (Car, Motorcycle, or Send Delivery) and rounded to the nearest 10 toea. All trips currently operate on Cash Payment (PGK Kina) paid directly to the driver upon completion of the ride.\n\n'
+                      '5. Cancellations, Conduct & Parcel Rules\n'
+                      'Passengers must treat drivers with respect and may cancel within the allowed window prior to driver arrival. Repeated fake bookings, refusal to pay completed trip fares, abusive behavior, or attempting to send illegal or hazardous items via Send Delivery will result in permanent suspension.\n\n'
+                      '6. Real-Time GPS & Trip Safety Records\n'
+                      'Flising Ride records real-time GPS coordinates and trip logs during active bookings to match nearby drivers, provide live ETAs, and maintain security records for passenger and driver protection.',
                       style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
                     ),
                   ],
