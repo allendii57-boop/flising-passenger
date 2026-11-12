@@ -618,6 +618,8 @@ void _calculateFareStraightLine() {
         setState(() {
           _rideStatus = 'ACCEPTED';
           _assignedDriverId = rideData['assignedDriverId'];
+          if (rideData['driverName'] != null) _driverName = rideData['driverName'].toString();
+          if (rideData['driverPhoto'] != null) _driverPhoto = rideData['driverPhoto'].toString();
           _showCancelButton = false;
         });
         _startTrackingDriver();
@@ -750,7 +752,7 @@ void _calculateFareStraightLine() {
     setState(() {
       _driverName = d['fullName'] ?? 'Driver';
       _driverPhone = d['phoneNumber'] ?? '';
-      _driverPhoto = d['photoUrl'];
+      _driverPhoto = (d['profileImageUrl'] ?? d['photoUrl'])?.toString();
     });
   }
 });

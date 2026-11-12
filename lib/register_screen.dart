@@ -147,6 +147,8 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
       ).ref('users/passengers/${userCredential.user!.uid}').set({
         'fullName': name,
         'email': email,
+        'phone': phone,
+        'phoneNumber': phone,
         'role': 'passenger',
         'isVerified': true,
         'registeredAt': ServerValue.timestamp,

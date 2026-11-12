@@ -54,6 +54,9 @@ class _PassengerProfilePageState extends State<PassengerProfilePage> {
     }
     setState(() {
       _userEmail = _currentUser!.email ?? "No Email Provided";
+      if (_currentUser!.phoneNumber != null && _currentUser!.phoneNumber!.isNotEmpty) {
+        _userPhone = _currentUser!.phoneNumber!;
+      }
       _userName = (_currentUser!.displayName != null && _currentUser!.displayName!.isNotEmpty)
           ? _currentUser!.displayName!
           : _userEmail.split('@')[0].toUpperCase();
