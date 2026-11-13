@@ -209,15 +209,12 @@ _locationStream = Geolocator.getPositionStream(
   final activePickup = _customPickupLocation ?? _myLocation;
   try {
     final url = Uri.parse(
-      'https://maps.googleapis.com/maps/api/directions/json'
-      '?origin=${activePickup.latitude},${activePickup.longitude}'
-      '&destination=${_dropoffLocation!.latitude},${_dropoffLocation!.longitude}'
-      '&key=AIzaSyB455Y5mJwyYGdmd0OLj8IHirxn4OqNo_A'
+      'https://router.project-osrm.org/route/v1/driving/${activePickup.longitude},${activePickup.latitude};${_dropoffLocation!.longitude},${_dropoffLocation!.latitude}?overview=full&geometries=polyline'
     );
     final response = await http.get(url);
     final data = json.decode(response.body);
-    if (data['status'] == 'OK') {
-      final meters = data['routes'][0]['legs'][0]['distance']['value'];
+    if (data['code'] == 'Ok' && data['routes'] != null && (data['routes'] as List).isNotEmpty) {
+      final meters = (data['routes'][0]['distance'] as num).toDouble();
       final distanceInKm = meters / 1000.0;
       final perKm = _isSendMode ? 5.00 : (_vehicleType == 'motorcycle' ? 5.50 : 6.70);
       final rawFare = distanceInKm * perKm;
@@ -226,7 +223,7 @@ _locationStream = Geolocator.getPositionStream(
       if (mounted) setState(() {
         _calculatedFareAmount = finalFare;
         _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
-          final encoded = data['routes'][0]['overview_polyline']['points'];
+          final encoded = data['routes'][0]['geometry'];
           _routePoints = RouteService.decodePolyline(encoded as String);
           // Auto-zoom to fit the route
           if (_routePoints.isNotEmpty) {
