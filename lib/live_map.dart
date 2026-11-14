@@ -1,6 +1,26 @@
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'service_areas.dart';
+
+
+class _OsmTileProvider implements TileProvider {
+  static final http.Client _client = http.Client();
+  @override
+  Future<Tile> getTile(int x, int y, int? zoom) async {
+    final z = zoom ?? 15;
+    try {
+      final resp = await _client.get(
+        Uri.parse('https://tile.openstreetmap.org/$z/$x/$y.png'),
+        headers: {'User-Agent': 'FlisingPassengerApp/1.9 (png.flising.app)'},
+      );
+      if (resp.statusCode == 200) {
+        return Tile(256, 256, resp.bodyBytes);
+      }
+    } catch (_) {}
+    return TileProvider.noTile;
+  }
+}
 
 class LiveMap extends StatefulWidget {
   final LatLng myLocation;
@@ -103,6 +123,13 @@ class _LiveMapState extends State<LiveMap> {
     }
 
     return GoogleMap(
+      mapType: MapType.none,
+      tileOverlays: {
+        TileOverlay(
+          tileOverlayId: const TileOverlayId('osm_detailed'),
+          tileProvider: _OsmTileProvider(),
+        ),
+      },
       onMapCreated: widget.onMapCreated,
       initialCameraPosition: CameraPosition(
         target: widget.myLocation,
