@@ -33,7 +33,7 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y python3-pil
           python3 pad_icon.py
-          dart run flutter_launcher_icons
+          echo "Using pre-fitted mipmaps"
 
       - name: Build APK
         run: flutter build apk --release --split-per-abi
