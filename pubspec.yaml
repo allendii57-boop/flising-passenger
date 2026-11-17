@@ -39,7 +39,23 @@ dependencies:
   agora_rtc_engine: ^6.3.2
 
 dev_dependencies:
-  flutter_launcher_icons:
+  flutter_launcher_icons: ^0.13.1
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/flising-ride.png
+    - assets/images/flising_logo.png
+    - assets/images/map_marker.png
+    - assets/images/app_icon.png
+    - assets/images/splash_logo.png
+    - assets/images/flising_new_logo.jpg
+    - assets/images/flising_mark.png
+
+flutter_launcher_icons:
   android: true
   ios: false
   image_path: "assets/images/flising-ride.png"
