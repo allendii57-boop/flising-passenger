@@ -57,6 +57,6 @@ flutter:
 
 flutter_launcher_icons:
   android: true
-  ios: false
-  image_path: "assets/images/flising-ride.png"
+  ios: true
+  image_path: "assets/images/app_icon.png"
   min_sdk_android: 21
