@@ -519,6 +519,8 @@ void _calculateFareStraightLine() {
       if (driverData is! Map) return;
       final isOnline = driverData['isOnline'] as bool? ?? false;
       if (!isOnline) return;
+      final activeRide = driverData['currentRideId'];
+      if (activeRide != null && activeRide.toString().isNotEmpty) return;
       // Only match drivers with the requested vehicle type (legacy drivers = car)
       final dProfile = driverData['profile'];
       String dType = 'car';
@@ -1007,9 +1009,9 @@ void _calculateFareStraightLine() {
                               margin: const EdgeInsets.only(bottom: 8),
                               child: Row(
                                 children: [
-                                  Expanded(child: _vehicleOption('car', Icons.directions_car, 'Car', _isSendMode ? 'K5.00/km' : 'K6.70/km')),
+                                  Expanded(child: _vehicleOption('car', Icons.directions_car, 'Car', _isSendMode ? 'K6.00/km' : 'K6.70/km')),
                                   const SizedBox(width: 8),
-                                  Expanded(child: _vehicleOption('motorcycle', Icons.two_wheeler, 'Motorcycle', _isSendMode ? 'K5.00/km' : 'K5.50/km')),
+                                  Expanded(child: _vehicleOption('motorcycle', Icons.two_wheeler, 'Motorcycle', 'K6.00/km')),
                                 ],
                               ),
                             ),
