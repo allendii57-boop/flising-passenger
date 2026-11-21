@@ -216,10 +216,10 @@ _locationStream = Geolocator.getPositionStream(
     if (data['code'] == 'Ok' && data['routes'] != null && (data['routes'] as List).isNotEmpty) {
       final meters = (data['routes'][0]['distance'] as num).toDouble();
       final distanceInKm = meters / 1000.0;
-      final perKm = _isSendMode ? 5.00 : (_vehicleType == 'motorcycle' ? 5.50 : 6.70);
+      final perKm = _isSendMode ? 6.00 : (_vehicleType == 'motorcycle' ? 6.00 : 6.70);
       final rawFare = distanceInKm * perKm;
-      // Round up to the nearest 0.10 (10 toea)
-      final finalFare = (double.parse(rawFare.toStringAsFixed(2)) * 10).ceil() / 10.0;
+      // Round down to the nearest K 1.00
+      final finalFare = rawFare.floorToDouble().clamp(1.0, 99999.0);
       if (mounted) setState(() {
         _calculatedFareAmount = finalFare;
         _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";
@@ -259,10 +259,10 @@ void _calculateFareStraightLine() {
     activePickup.latitude, activePickup.longitude,
     _dropoffLocation!.latitude, _dropoffLocation!.longitude);
   final distanceInKm = (distanceInMeters / 1000) * 1.3; // approx road distance
-  final perKm = _isSendMode ? 5.00 : (_vehicleType == 'motorcycle' ? 5.50 : 6.70);
+  final perKm = _isSendMode ? 6.00 : (_vehicleType == 'motorcycle' ? 6.00 : 6.70);
       final rawFare = distanceInKm * perKm;
-      // Round up to the nearest 0.10 (10 toea)
-      final finalFare = (double.parse(rawFare.toStringAsFixed(2)) * 10).ceil() / 10.0;
+      // Round down to the nearest K 1.00
+      final finalFare = rawFare.floorToDouble().clamp(1.0, 99999.0);
   if (mounted) setState(() {
     _calculatedFareAmount = finalFare;
     _estimatedFare = "K ${finalFare.toStringAsFixed(2)}";

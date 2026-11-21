@@ -79,7 +79,7 @@ class _PassengerRegisterScreenState extends State<PassengerRegisterScreen> {
                       '3. Account & Identity Verification\n'
                       'Passengers must provide their true full name, active phone number, valid email address, and verification photo where required. Impersonation or false registration details will result in immediate account termination.\n\n'
                       '4. Fares & Cash Payments\n'
-                      'Fares are automatically calculated by GPS distance and service type (Car, Motorcycle, or Send Delivery) and rounded to the nearest 10 toea. All trips currently operate on Cash Payment (PGK Kina) paid directly to the driver upon completion of the ride.\n\n'
+                      'Fares are automatically calculated by GPS distance and service type (Car, Motorcycle, or Send Delivery) and rounded down to the nearest K 1.00. All trips currently operate on Cash Payment (PGK Kina) paid directly to the driver upon completion of the ride.\n\n'
                       '5. Cancellations, Conduct & Parcel Rules\n'
                       'Passengers must treat drivers with respect and may cancel within the allowed window prior to driver arrival. Repeated fake bookings, refusal to pay completed trip fares, abusive behavior, or attempting to send illegal or hazardous items via Send Delivery will result in permanent suspension.\n\n'
                       '6. Real-Time GPS & Trip Safety Records\n'
