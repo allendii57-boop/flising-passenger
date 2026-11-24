@@ -871,8 +871,7 @@ void _calculateFareStraightLine() {
                     margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
                     decoration: BoxDecoration(color: darkSurface, borderRadius: BorderRadius.circular(24)),
-                    child: SingleChildScrollView(
-                      child: Column(
+                    child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_rideStatus == 'IDLE') ...[
@@ -1224,7 +1223,8 @@ void _calculateFareStraightLine() {
                     padding: const EdgeInsets.all(30),
                     margin: const EdgeInsets.symmetric(horizontal: 30),
                     decoration: BoxDecoration(color: darkSurface, borderRadius: BorderRadius.circular(24)),
-                    child: Column(
+                    child: SingleChildScrollView(
+                      child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.check_circle, color: flisingOrange, size: 60),
