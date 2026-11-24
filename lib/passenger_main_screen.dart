@@ -72,6 +72,7 @@ String? _driverPhone;
   final _parcelNoteCtrl = TextEditingController();
 String? _driverPhoto;
   int _givenRating = 0;
+  final TextEditingController _ratingCommentCtrl = TextEditingController();
   int _selectedView = 0;
   
   bool _isVerified = false; 
@@ -786,13 +787,16 @@ void _calculateFareStraightLine() {
   void _submitRating() async {
     if (_lastCompletedRideId != null && _givenRating > 0) {
       DatabaseReference rideRef = FirebaseDatabase.instanceFor(app: Firebase.app(), databaseURL: 'https://flising-default-rtdb.asia-southeast1.firebasedatabase.app').ref('rides/$_lastCompletedRideId');
-      await rideRef.update({'rating': _givenRating});
+      final comment = _ratingCommentCtrl.text.trim();
+      final Map<String, dynamic> ratingData = {'rating': _givenRating};
+      if (comment.isNotEmpty) ratingData['ratingComment'] = comment;
+      await rideRef.update(ratingData);
     }
     setState(() {
       _showCompletionPopup = false;
       _dropoffLocation = null;
       _estimatedFare = "K 0.00";
-      _dropoffText = "Tap map to set dropoff..."; _isSendMode = false; _deliveryPin = ''; _recipientNameCtrl.clear(); _recipientPhoneCtrl.clear(); _parcelNoteCtrl.clear();
+      _dropoffText = "Tap map to set dropoff..."; _isSendMode = false; _deliveryPin = ''; _recipientNameCtrl.clear(); _recipientPhoneCtrl.clear(); _parcelNoteCtrl.clear(); _ratingCommentCtrl.clear(); _givenRating = 0;
     });
   }
 
@@ -867,7 +871,8 @@ void _calculateFareStraightLine() {
                     margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
                     decoration: BoxDecoration(color: darkSurface, borderRadius: BorderRadius.circular(24)),
-                    child: Column(
+                    child: SingleChildScrollView(
+                      child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (_rideStatus == 'IDLE') ...[
@@ -1286,9 +1291,42 @@ void _calculateFareStraightLine() {
                             onPressed: () => setState(() => _givenRating = index + 1),
                           )),
                         ),
-                        const SizedBox(height: 30),
-                        ElevatedButton(onPressed: _submitRating, child: const Text("SUBMIT")),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _ratingCommentCtrl,
+                          maxLines: 2,
+                          style: const TextStyle(color: Colors.white, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Leave a comment (optional)...',
+                            hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
+                            filled: true,
+                            fillColor: Colors.black26,
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: Colors.white24),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: flisingOrange),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: flisingOrange,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: _submitRating,
+                            child: const Text("SUBMIT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
                       ],
+                    ),
                     ),
                   ),
                 ),
