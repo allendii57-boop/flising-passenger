@@ -25,6 +25,8 @@ class PassengerHistory extends StatelessWidget {
     final cost = (ride['fare'] ?? 'K 0.00').toString();
     final driverName = (ride['driverName'] ?? 'Flising Driver').toString();
     final type = ride['type'] == 'delivery' ? 'Parcel Delivery' : 'Passenger Ride';
+    final rating = (ride['rating'] is num) ? (ride['rating'] as num).toInt() : 0;
+    final ratingComment = (ride['ratingComment'] ?? '').toString().trim();
 
     showDialog(
       context: context,
@@ -55,6 +57,26 @@ class PassengerHistory extends StatelessWidget {
             Text('Service: $type', style: const TextStyle(color: Colors.white70, fontSize: 13)),
             const SizedBox(height: 4),
             Text('Driver: $driverName', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            if (rating > 0 || ratingComment.isNotEmpty) ...[
+              const Divider(color: Colors.white12, height: 22),
+              if (rating > 0)
+                Row(
+                  children: [
+                    const Text('Your Rating: ', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    ...List.generate(5, (i) => Icon(
+                      i < rating ? Icons.star : Icons.star_border,
+                      color: const Color(0xFFE9692C),
+                      size: 16,
+                    )),
+                    const SizedBox(width: 6),
+                    Text('$rating/5', style: const TextStyle(color: Color(0xFFE9692C), fontSize: 13, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              if (ratingComment.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text('"$ratingComment"', style: const TextStyle(color: Colors.white70, fontSize: 13, fontStyle: FontStyle.italic)),
+              ],
+            ],
           ],
         ),
         actions: [
@@ -153,7 +175,7 @@ class PassengerHistory extends StatelessWidget {
                                           final driverName = (ride['driverName'] ?? 'Flising Driver').toString();
                                           return GestureDetector(
                                             onTap: () => _showTripReceipt(context, ride, dateTimeText),
-                                            child: _buildHistoryRow(dateTimeText, pickup, dropoff, cost, driverName),
+                                            child: _buildHistoryRow(dateTimeText, pickup, dropoff, cost, driverName, rating: (ride['rating'] is num) ? (ride['rating'] as num).toInt() : 0, ratingComment: (ride['ratingComment'] ?? '').toString().trim()),
                                           );
                                         },
                                       ),
@@ -170,7 +192,7 @@ class PassengerHistory extends StatelessWidget {
     );
   }
 
-  Widget _buildHistoryRow(String dateTime, String pickup, String dropoff, String cost, String driverName) {
+  Widget _buildHistoryRow(String dateTime, String pickup, String dropoff, String cost, String driverName, {int rating = 0, String ratingComment = ''}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
@@ -213,6 +235,15 @@ class PassengerHistory extends StatelessWidget {
               Text(driverName, style: const TextStyle(color: Colors.white54, fontSize: 13)),
             ],
           ),
+          if (rating > 0 || ratingComment.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${rating > 0 ? "⭐ $rating/5" : ""}${rating > 0 && ratingComment.isNotEmpty ? " — " : ""}${ratingComment.isNotEmpty ? "\"$ratingComment\"" : ""}',
+              style: const TextStyle(color: Color(0xFFE9692C), fontSize: 12, fontWeight: FontWeight.w500),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );
